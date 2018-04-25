@@ -1,0 +1,30 @@
+{
+  "id": "cordova-plugin-kakao-sdk",
+  "name": "cordova-plugin-kakao-sdk",
+  "version": "1.0.4",
+  "description": "Kakao Cordova SDK Plugin",
+  "cordova": {
+    "id": "cordova-plugin-kakao-sdk",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raccoondev85/cordova-plugin-kakao-sdk.git"
+  },
+  "keywords": [
+    "cordova",
+    "kakao",
+    "kakaotalk",
+    "login",
+    "kakao-sdk",
+    "kakaoaccount",
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios"
+  ],
+  "author": "raccoondev85",
+  "license": "MIT"
+}

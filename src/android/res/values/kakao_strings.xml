@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="com_kakao_login_button">카카오계정으로 로그인</string>
+    <string name="com_kakao_logout_button">로그아웃</string>
+    <string name="com_kakao_confirm_logout">이 앱을 로그아웃 하시겠습니까?</string>
+    <string name="com_kakao_ok_button">확인</string>
+    <string name="com_kakao_cancel_button">취소</string>
+    <string name="com_kakao_unlink_button">탈퇴</string>
+    <string name="com_kakao_tokeninfo_button">토큰정보</string>
+    <string name="com_kakao_confirm_unlink">이 앱을 탈퇴하시겠습니까?</string>
+    <string name="com_kakao_profile_userId">카카오 사용자 ID</string>
+
+    <string name="com_kakao_kakaotalk_account">카카오톡으로 간편로그인</string>
+    <string name="com_kakao_kakaostory_account">카카오스토리로 간편로그인</string>
+    <string name="com_kakao_other_kakaoaccount">다른 카카오계정으로 로그인</string>
+    <string name="com_kakao_account_cancel">취소</string>
+    <string-array name="com_kakao_accounts_array">
+        <item>@string/com_kakao_kakaotalk_account</item>
+        <item>@string/com_kakao_other_kakaoaccount</item>
+        <item>@string/com_kakao_account_cancel</item>
+    </string-array>
+
+    <string name="com_kakao_login_image_tts">카카오계정으로 로그인 이미지</string>
+    <string name="com_kakao_login_button_tts">카카오계정으로 로그인, 버튼</string>
+    <string name="com_kakao_kakaotalk_account_tts">카카오톡으로 간편로그인, 버튼</string>
+    <string name="com_kakao_kakaostory_account_tts">카카오스토리로 간편로그인, 버튼</string>
+    <string name="com_kakao_other_kakaoaccount_tts">다른 카카오계정으로 로그인, 버튼</string>
+    <string name="com_kakao_account_cancel_tts">취소, 버튼</string>
+
+    <string name="com_kakao_talk_chooser_text">어떤 카카오톡 앱을 사용하시겠습니까?</string>
+</resources>
