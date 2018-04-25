@@ -1,7 +1,7 @@
 {
   "id": "cordova-plugin-kakao-sdk",
   "name": "cordova-plugin-kakao-sdk",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Kakao Cordova SDK Plugin",
   "cordova": {
     "id": "cordova-plugin-kakao-sdk",
