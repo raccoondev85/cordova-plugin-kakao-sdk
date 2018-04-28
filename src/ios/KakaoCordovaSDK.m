@@ -110,7 +110,7 @@
         if (success) {
             // logout success.
             NSLog(@"Successful unlink.");
-            uginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId]; 
         } else {
             // failed
@@ -120,7 +120,7 @@
         }
     }];
 
-    CDVPluginResult* pl
+    
 }
 
 
