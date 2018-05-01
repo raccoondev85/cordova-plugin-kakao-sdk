@@ -21,7 +21,7 @@ public class KakaoResources {
     public static int layout_login_dialog;
     public static int login_list_view;
     public static int login_close_button;
-
+    public static int app_name;
 
     public static void initResources(Application _app){
         final Application app  = _app;
@@ -50,6 +50,7 @@ public class KakaoResources {
         login_list_view = resources.getIdentifier("login_list_view", "id", package_name);
         login_close_button = resources.getIdentifier("login_close_button", "id", package_name);
 
+        app_name = resources.getIdentifier("app_name", "string", package_name);
     }
 
 

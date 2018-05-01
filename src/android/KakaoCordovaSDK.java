@@ -1,10 +1,14 @@
 package com.raccoondev85.plugin.kakao;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -19,6 +23,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.kakao.kakaolink.internal.KakaoTalkLinkProtocol;
 import com.kakao.kakaolink.v2.KakaoLinkService;
 import com.kakao.kakaolink.v2.KakaoLinkResponse;
 import com.kakao.message.template.*;
@@ -32,6 +37,8 @@ import com.kakao.auth.KakaoAdapter;
 import com.kakao.auth.KakaoSDK;
 import com.kakao.auth.Session;
 import com.kakao.network.ErrorResult;
+import com.kakao.network.storage.ImageDeleteResponse;
+import com.kakao.network.storage.ImageUploadResponse;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
 import com.kakao.usermgmt.callback.MeResponseCallback;
@@ -39,6 +46,7 @@ import com.kakao.usermgmt.callback.UnLinkResponseCallback;
 import com.kakao.usermgmt.response.model.UserProfile;
 import com.kakao.util.KakaoParameterException;
 import com.kakao.util.exception.KakaoException;
+import com.kakao.util.helper.MediaUtils;
 import com.raccoondev85.plugin.kakao.KakaoResources;
 
 import org.apache.cordova.CallbackContext;
@@ -49,19 +57,31 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static android.app.Activity.RESULT_OK;
 
 public class KakaoCordovaSDK extends CordovaPlugin {
 
     private static final String LOG_TAG = "KakaoCordovaSDK";
     private static volatile Activity currentActivity;
-    private SessionCallback callback;
+    private SessionCallback sesstionCallback;
+    private KakaoLinkResponseCallback kakaoLinkResponseCallback;
+    private KakaoLinkImageUploadResponseCallback kakaoLinkImageUploadResponseCallback;
+    private KakaoLinkImageDeleteResponseCallback kakaoLinkImageDeleteResponseCallback;
     private static AuthType[] customAuthTypes;
+    private static final int GALLERY_REQUEST_CODE = 0;
+    private String[] STORAGE_PERMISSIONS = { Manifest.permission.READ_EXTERNAL_STORAGE };
+    private final int REQUEST_EXTERNAL_STORAGE = 1;
+
 
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         Log.v(LOG_TAG, "kakao : initialize");
@@ -74,25 +94,71 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         }
 
+
     }
 
     public boolean execute(final String action, JSONArray options, final CallbackContext callbackContext) throws JSONException {
         Log.v(LOG_TAG, "kakao : execute " + action);
         cordova.setActivityResultCallback(this);
-        callback = new SessionCallback(callbackContext);
-        Session.getCurrentSession().addCallback(callback);
 
         if (action.equals("login")) {
+            sesstionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sesstionCallback);
             this.login(callbackContext, options);
             return true;
         } else if (action.equals("logout")) {
+            sesstionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sesstionCallback);
             this.logout(callbackContext);
             return true;
 	    } else if (action.equals("unlinkApp")) {
+            sesstionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sesstionCallback);
             this.unlinkApp(callbackContext);
             return true;
 	    } else if (action.equals("getAccessToken")) {
+            sesstionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sesstionCallback);
 	        this.getAccessToken(callbackContext);
+	        return true;
+        } else if (action.equals("sendLinkFeed")) {
+            kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
+            this.sendLinkFeed(callbackContext, options);
+	        return true;
+        } else if (action.equals("sendLinkList")) {
+            kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
+	        this.sendLinkList(callbackContext, options);
+	        return true;
+        } else if (action.equals("sendLinkLocation")) {
+            kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
+	        this.sendLinkLocation(callbackContext, options);
+	        return true;
+        } else if (action.equals("sendLinkCommerce")) {
+            kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
+	        this.sendLinkCommerce(callbackContext, options);
+	        return true;
+        } else if (action.equals("sendLinkText")) {
+            kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
+	        this.sendLinkText(callbackContext, options);
+	        return true;
+        } else if (action.equals("sendLinkScrap")) {
+            kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
+	        this.sendLinkScrap(callbackContext, options);
+	        return true;
+        } else if (action.equals("sendLinkCustom")) {
+            kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
+	        this.sendLinkCustom(callbackContext, options);
+	        return true;
+        } else if (action.equals("uploadImage")) {
+            kakaoLinkImageUploadResponseCallback = new KakaoLinkImageUploadResponseCallback(callbackContext);
+            this.uploadImage(callbackContext, options);
+	        return true;
+        } else if (action.equals("deleteUploadedImage")) {
+            kakaoLinkImageDeleteResponseCallback = new KakaoLinkImageDeleteResponseCallback(callbackContext);
+            this.deleteUploadedImage(callbackContext, options);
+	        return true;
+        } else if (action.equals("postStory")) {
+	        this.postStory(callbackContext, options);
 	        return true;
         }
         return false;
@@ -159,17 +225,646 @@ public class KakaoCordovaSDK extends CordovaPlugin {
     }
 
     private void getAccessToken(CallbackContext callbackContext) {
-        // this.login();
         String accessToken = Session.getCurrentSession().getTokenInfo().getAccessToken();
         callbackContext.success(accessToken);
     }
 
+    private void sendLinkFeed(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+            if(object == null){
+                callbackContext.error("feed template is null.");
+                return;
+            }
+            if (!object.has("content")){
+                callbackContext.error("content is null.");
+                return;
+            }
+
+            ContentObject contentObject = getContentObject(object.getJSONObject("content"));
+            if(contentObject == null){
+                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                return;
+            }
+
+            FeedTemplate.Builder feedTemplateBuilder = new FeedTemplate.Builder(contentObject);
+
+            if (object.has("social")){
+                SocialObject socialObject = getSocialObject(object.getJSONObject("social"));
+                if(socialObject != null){
+                    feedTemplateBuilder.setSocial(socialObject);
+                }
+            }
+
+            addButtonsArray(object, feedTemplateBuilder);
+
+            KakaoLinkService.getInstance().sendDefault(currentActivity, feedTemplateBuilder.build(), kakaoLinkResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void sendLinkList(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+            if(object == null){
+                callbackContext.error("list template is null.");
+                return;
+            }
+            if (!object.has("headerTitle")){
+                callbackContext.error("headerTitle is null.");
+                return;
+            }
+            if (!object.has("headerLink")){
+                callbackContext.error("headerLink is null.");
+                return;
+            }
+            if (!object.has("contents")){
+                callbackContext.error("contents is null.");
+                return;
+            }
+
+            LinkObject linkObject = getLinkObject(object.getJSONObject("headerLink"));
+            if(linkObject == null){
+                callbackContext.error("headerLink is null.");
+                return;
+            }
+            ListTemplate.Builder listTemplateBuilder = ListTemplate.newBuilder(
+                    object.getString("headerTitle"),linkObject);
+
+            if(!addContentsArray(object, listTemplateBuilder)){
+                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                return;
+            }
+
+            addButtonsArray(object, listTemplateBuilder);
+
+            KakaoLinkService.getInstance().sendDefault(currentActivity, listTemplateBuilder.build(), kakaoLinkResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void sendLinkLocation(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+            if(object == null){
+                callbackContext.error("location template is null.");
+                return;
+            }
+            if (!object.has("content")){
+                callbackContext.error("content is null.");
+                return;
+            }
+            if (!object.has("address")){
+                callbackContext.error("address is null.");
+                return;
+            }
+
+            ContentObject contentObject = getContentObject(object.getJSONObject("content"));
+            if(contentObject == null){
+                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                return;
+            }
+
+            LocationTemplate.Builder locationTemplateBuilder = LocationTemplate.newBuilder(object.getString("address"), contentObject);
+
+            if (object.has("addressTitle")){
+                locationTemplateBuilder.setAddressTitle(object.getString("addressTitle"));
+            }
+            if (object.has("social")){
+                SocialObject socialObject = getSocialObject(object.getJSONObject("social"));
+                if(socialObject != null){
+                    locationTemplateBuilder.setSocial(socialObject);
+                }
+            }
+
+            addButtonsArray(object, locationTemplateBuilder);
+
+            KakaoLinkService.getInstance().sendDefault(currentActivity, locationTemplateBuilder.build(), kakaoLinkResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void sendLinkCommerce(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+            if(object == null){
+                callbackContext.error("commerce template is null.");
+                return;
+            }
+            if (!object.has("content")){
+                callbackContext.error("content is null.");
+                return;
+            }
+            if (!object.has("commerce")){
+                callbackContext.error("commerce is null.");
+                return;
+            }
+
+            ContentObject contentObject = getContentObject(object.getJSONObject("content"));
+            if(contentObject == null){
+                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                return;
+            }
+
+            CommerceDetailObject commerceDetailObject = getCommerceDetailObject(object.getJSONObject("commerce"));
+            if(commerceDetailObject == null){
+                callbackContext.error("regularPrice is null.");
+                return;
+            }
+
+            CommerceTemplate.Builder commerceTemplateBuilder = CommerceTemplate.newBuilder(contentObject, commerceDetailObject);
+
+            addButtonsArray(object, commerceTemplateBuilder);
+
+            KakaoLinkService.getInstance().sendDefault(currentActivity, commerceTemplateBuilder.build(), kakaoLinkResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void sendLinkText(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+            if(object == null){
+                callbackContext.error("text template is null.");
+                return;
+            }
+            if (!object.has("text")){
+                callbackContext.error("text is null.");
+                return;
+            }
+            if (!object.has("link")){
+                callbackContext.error("link is null.");
+                return;
+            }
+
+            LinkObject linkObject = getLinkObject(object.getJSONObject("link"));
+            if(linkObject == null){
+                callbackContext.error("link is null.");
+                return;
+            }
+            TextTemplate.Builder textTemplateBuilder = TextTemplate.newBuilder(
+                    object.getString("text"),linkObject);
+
+
+            if (object.has("buttonTitle")){
+                textTemplateBuilder.setButtonTitle(object.getString("buttonTitle"));
+            }
+
+            addButtonsArray(object, textTemplateBuilder);
+
+            KakaoLinkService.getInstance().sendDefault(currentActivity, textTemplateBuilder.build(), kakaoLinkResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void sendLinkScrap(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+            if(object == null){
+                callbackContext.error("scrap template is null.");
+                return;
+            }
+            if (!object.has("url")){
+                callbackContext.error("url is null.");
+                return;
+            }
+
+            KakaoLinkService.getInstance().sendScrap(currentActivity, object.getString("url"), kakaoLinkResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void sendLinkCustom(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+            if(object == null){
+                callbackContext.error("custom template is null.");
+                return;
+            }
+            if (!object.has("templateId")){
+                callbackContext.error("templateId is null.");
+                return;
+            }
+
+            String templateId = object.getString("templateId");
+
+            Map<String, String> templateArgs = new HashMap<String, String>();
+            if (object.has("title")){
+                templateArgs.put("title", object.getString("title"));
+            }
+            if (object.has("description")){
+                templateArgs.put("description", object.getString("description"));
+            }
+
+
+            KakaoLinkService.getInstance().sendCustom(currentActivity, templateId, templateArgs, kakaoLinkResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void uploadImage(CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+
+            if (!object.has("fileOrUrl")){
+                uploadImageForLink();
+            }
+
+            if("file".equals(object.getString("fileOrUrl"))){
+                uploadImageForLink();
+            }else if("url".equals(object.getString("fileOrUrl"))){
+                if(!object.has("url")){
+                    callbackContext.error("url is null.");
+                    return;
+                }
+                scrapRemoteImage(object.getString("url"));
+            }else{
+                uploadImageForLink();
+            }
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void uploadImageForLink() {
+        if(!cordova.hasPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE)){
+            cordova.requestPermissions(this, REQUEST_EXTERNAL_STORAGE, STORAGE_PERMISSIONS);
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType(android.provider.MediaStore.Images.Media.CONTENT_TYPE);
+        intent.setData(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        currentActivity.startActivityForResult(intent, GALLERY_REQUEST_CODE);
+    }
+
+    private void uploadLocalImage(Uri uri) {
+
+
+        try {
+            File imageFile = new File(MediaUtils.getImageFilePathFromUri(uri, currentActivity));
+
+            KakaoLinkService.getInstance().uploadImage(currentActivity, false, imageFile, kakaoLinkImageUploadResponseCallback);
+        } catch (Exception e) {
+            kakaoLinkImageUploadResponseCallback.callbackContext.error(e.toString());
+        }
+    }
+
+    private void scrapRemoteImage(String url){
+
+        try {
+            KakaoLinkService.getInstance().scrapImage(currentActivity, false, url, kakaoLinkImageUploadResponseCallback);
+        } catch (Exception e) {
+            kakaoLinkImageUploadResponseCallback.callbackContext.error(e.toString());
+        }
+    }
+
+    private void deleteUploadedImage(final CallbackContext callbackContext, JSONArray options) {
+        try {
+            final JSONObject object = options.getJSONObject(0);
+
+            if (!object.has("url")){
+                callbackContext.error("KLDeleteImageConfig is null");
+                return;
+            }
+
+            String url = object.getString("url");
+
+            KakaoLinkService.getInstance().deleteImageWithUrl(currentActivity, url, kakaoLinkImageDeleteResponseCallback);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            callbackContext.error("Exception error : " + e);
+        }
+    }
+
+    private void postStory(CallbackContext callbackContext, JSONArray options) {
+        try {
+
+            final JSONObject object = options.getJSONObject(0);
+            if (object == null) {
+                callbackContext.error("KLPostStoryConfig is null.");
+                return;
+            }
+
+            if (!object.has("post") || !object.has("appver")) {
+                callbackContext.error("post or appver is null.");
+                return;
+            }
+
+            // Recommended: Use application context for parameter.
+            KakaoStoryLink storyLink = KakaoStoryLink.getLink(currentActivity);
+
+            // check, intent is available.
+            if (!storyLink.isAvailableIntent()) {
+                callbackContext.error("KakaoStory not installed.");
+                return;
+            }
+
+            String post = object.getString("post");
+            String appver = object.getString("appver");
+            String appid = currentActivity.getPackageName();
+            if(object.has("appid")){
+                appid = object.getString("appid");
+            }
+            String appname = currentActivity.getResources().getString(KakaoResources.app_name);
+            if(object.has("appname")){
+                appname = object.getString("appname");
+            }
+
+            Map<String, Object> urlInfoAndroid = new Hashtable<String, Object>(1);
+            if(object.has("urlinfo")){
+
+                JSONObject urlinfo = object.getJSONObject("urlinfo");
+                if(!urlinfo.has("title")){
+                    callbackContext.error("title in urlinfo is null.");
+                    return;
+                }
+                urlInfoAndroid.put("title", urlinfo.getString("title"));
+                if(urlinfo.has("desc")){
+                    urlInfoAndroid.put("desc", urlinfo.getString("desc"));
+                }
+                if(urlinfo.has("imageURLs")){
+                    JSONArray imageurl = urlinfo.getJSONArray("imageURLs");
+                    if(imageurl != null){
+                        String[] arr=new String[imageurl.length()];
+                        for(int i=0; i<arr.length; i++) {
+                            arr[i]=imageurl.optString(i);
+                        }
+                        urlInfoAndroid.put("imageurl", arr);
+                    }
+
+                }
+                if(urlinfo.has("type")){
+
+                    switch (urlinfo.getInt("type")) {
+                        case 2:
+                            urlInfoAndroid.put("type", "video");
+                            break;
+                        case 3:
+                            urlInfoAndroid.put("type", "music");
+                            break;
+                        case 4:
+                            urlInfoAndroid.put("type", "book");
+                            break;
+                        case 5:
+                            urlInfoAndroid.put("type", "article");
+                            break;
+                        case 6:
+                            urlInfoAndroid.put("type", "profile");
+                            break;
+                        default:
+                            urlInfoAndroid.put("type", "website");
+                            break;
+                    }
+
+                }
+            }
+
+            storyLink.openKakaoLink(currentActivity, post, appid, appver, appname, "UTF-8", urlInfoAndroid);
+            callbackContext.success("success!");
+
+        }catch (Exception e){
+            callbackContext.error(e.getMessage());
+        }
+
+
+
+    }
+
+    private ContentObject getContentObject(JSONObject object) {
+        if(object == null){
+            return null;
+        }
+        ContentObject.Builder contentObjectBuilder;
+        try{
+            LinkObject linkObject = getLinkObject(object.getJSONObject("link"));
+            if(!object.has("title") || linkObject == null || !object.has("imageURL")){
+                return null;
+            }
+            contentObjectBuilder = new ContentObject.Builder(object.getString("title"),
+                    object.getString("imageURL"), linkObject);
+
+            if(object.has("desc")){
+                contentObjectBuilder.setDescrption(object.getString("desc"));
+            }
+            if(object.has("imageWidth")){
+                contentObjectBuilder.setImageWidth(object.getInt("imageWidth"));
+            }
+            if(object.has("imageHeight")){
+                contentObjectBuilder.setImageHeight(object.getInt("imageHeight"));
+            }
+        }catch (Exception e){
+            return null;
+        }
+
+        return contentObjectBuilder.build();
+    }
+
+    private CommerceDetailObject getCommerceDetailObject(JSONObject object) {
+        if(object == null){
+            return null;
+        }
+        CommerceDetailObject.Builder commerceDetailObjectBuilder;
+        try {
+            if(!object.has("regularPrice")){
+                return null;
+            }
+            commerceDetailObjectBuilder = CommerceDetailObject.newBuilder(object.getInt("regularPrice"));
+            if(object.has("discountPrice")){
+                commerceDetailObjectBuilder.setDiscountPrice(object.getInt("discountPrice"));
+            }
+            if(object.has("discountRate")){
+                commerceDetailObjectBuilder.setDiscountRate(object.getInt("discountRate"));
+            }
+            if(object.has("fixedDiscountPrice")){
+                commerceDetailObjectBuilder.setFixedDiscountPrice(object.getInt("fixedDiscountPrice"));
+            }
+
+        }catch (Exception e){
+            return null;
+        }
+        return commerceDetailObjectBuilder.build();
+    }
+
+    private SocialObject getSocialObject(JSONObject object) {
+        if(object == null){
+            return null;
+        }
+        SocialObject.Builder socialObjectBuilder = new SocialObject.Builder();
+        try{
+            if(object.has("likeCount")){
+                socialObjectBuilder.setLikeCount(object.getInt("likeCount"));
+            }
+            if(object.has("commentCount")){
+                socialObjectBuilder.setCommentCount(object.getInt("commentCount"));
+            }
+            if(object.has("sharedCount")){
+                socialObjectBuilder.setSharedCount(object.getInt("sharedCount"));
+            }
+            if(object.has("viewCount")){
+                socialObjectBuilder.setViewCount(object.getInt("viewCount"));
+            }
+            if(object.has("subscriberCount")){
+                socialObjectBuilder.setSubscriberCount(object.getInt("subscriberCount"));
+            }
+        }catch (Exception e){
+            return null;
+        }
+        return socialObjectBuilder.build();
+    }
+
+    private ButtonObject getButtonObject(JSONObject object) {
+        if(object == null){
+            return null;
+        }
+        ButtonObject buttonObject;
+        try{
+            LinkObject linkObject = getLinkObject(object.getJSONObject("link"));
+            if(!object.has("title") || linkObject == null){
+                return null;
+            }
+            buttonObject = new ButtonObject(object.getString("title"), linkObject);
+        }catch (Exception e){
+            return null;
+        }
+
+        return buttonObject;
+    }
+    private LinkObject getLinkObject(JSONObject object) {
+        if(object == null){
+            return null;
+        }
+        LinkObject.Builder linkObjectBuilder = new LinkObject.Builder();
+        try{
+            if(object.has("webURL")){
+                linkObjectBuilder.setWebUrl(object.getString("webURL"));
+            }
+            if(object.has("mobileWebURL")){
+                linkObjectBuilder.setMobileWebUrl(object.getString("mobileWebURL"));
+            }
+            if(object.has("androidExecutionParams")){
+                linkObjectBuilder.setAndroidExecutionParams(object.getString("androidExecutionParams"));
+            }
+            if(object.has("iosExecutionParams")){
+                linkObjectBuilder.setIosExecutionParams(object.getString("iosExecutionParams"));
+            }
+        }catch (Exception e){
+            return null;
+        }
+        return linkObjectBuilder.build();
+    }
+
+    private void addButtonsArray(JSONObject object, Object template) {
+        if(object == null){
+            return;
+        }
+        try{
+            if (object.has("buttons")){
+                JSONArray buttons = new JSONArray(object.getString("buttons"));
+                if(buttons.length() < 1){
+                    return;
+                }
+                for(int i=0; i<buttons.length(); i++){
+                    ButtonObject buttonObject = getButtonObject(buttons.getJSONObject(i));
+                    if(buttonObject == null){
+                        continue;
+                    }
+                    if(template instanceof FeedTemplate.Builder){
+                        ((FeedTemplate.Builder) template).addButton(buttonObject);
+                    }else if(template instanceof ListTemplate.Builder){
+                        ((ListTemplate.Builder) template).addButton(buttonObject);
+                    }else if(template instanceof LocationTemplate.Builder){
+                        ((LocationTemplate.Builder) template).addButton(buttonObject);
+                    }else if(template instanceof CommerceTemplate.Builder){
+                        ((CommerceTemplate.Builder) template).addButton(buttonObject);
+                    }else if(template instanceof TextTemplate.Builder){
+                        ((TextTemplate.Builder) template).addButton(buttonObject);
+                    }
+                }
+            }
+        }catch (Exception e){
+            return;
+        }
+    }
+
+    private boolean addContentsArray(JSONObject object, ListTemplate.Builder template) {
+        if(object == null){
+            return false;
+        }
+        try{
+            if (object.has("contents")){
+                JSONArray contents = new JSONArray(object.getString("contents"));
+                if(contents.length() < 1){
+                    return false;
+                }
+                for(int i=0; i<contents.length(); i++){
+                    ContentObject contentObject = getContentObject(contents.getJSONObject(i));
+                    if(contentObject == null){
+                        return false;
+                    }
+                    template.addContent(contentObject);
+                }
+                return true;
+            }else{
+                return false;
+            }
+        }catch (Exception e){
+            return false;
+        }
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.v(LOG_TAG, "kakao : onActivityResult : " + requestCode + ", code: " + resultCode);
-        if (Session.getCurrentSession().handleActivityResult(requestCode, resultCode, intent)) {
+        if (requestCode == GALLERY_REQUEST_CODE && resultCode == RESULT_OK) {
+            Uri uri = intent.getData();
+            uploadLocalImage(uri);
+        }else if (Session.getCurrentSession().handleActivityResult(requestCode, resultCode, intent)) {
             return;
         }
         super.onActivityResult(requestCode, resultCode, intent);
+    }
+
+
+    @Override
+    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (kakaoLinkImageUploadResponseCallback == null) {
+            return;
+        }
+        switch (requestCode) {
+            case REQUEST_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    uploadImageForLink();
+                } else {
+                    kakaoLinkImageUploadResponseCallback.callbackContext.error("User did not agree to give storage permission.");
+                }
+                break;
+            default:
+                break;
+        }
+
     }
 
     private JSONObject handleLoginResult(UserProfile userProfile, String accessToken) {
@@ -200,6 +895,106 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             Log.v(LOG_TAG, "kakao : handleResult error - " + e.toString());
         }
         return response;
+    }
+
+    private JSONObject handleKakaoLinkImageUploadResponseResult(ImageUploadResponse imageUploadResponse) {
+        Log.v(LOG_TAG, "kakao : handleKakaoLinkImageUploadResponseResult");
+        JSONObject response = new JSONObject();
+        try {
+            Log.v(LOG_TAG, "kakao response: " + response);
+            response.put("url", imageUploadResponse.getOriginal().getUrl());
+            response.put("content_type", imageUploadResponse.getOriginal().getContentType());
+            response.put("length", imageUploadResponse.getOriginal().getLength());
+            response.put("height", imageUploadResponse.getOriginal().getHeight());
+            response.put("width", imageUploadResponse.getOriginal().getWidth());
+
+
+        } catch (JSONException e) {
+            Log.v(LOG_TAG, "kakao : handleResult error - " + e.toString());
+        }
+        return response;
+    }
+
+
+    private JSONObject handleKakaoLinkResponseResult(KakaoLinkResponse kakaoLinkResponse) {
+        Log.v(LOG_TAG, "kakao : handleKakaoLinkResponseResult");
+        JSONObject response = new JSONObject();
+        try {
+            Log.v(LOG_TAG, "kakao response: " + response);
+            response.put(KakaoTalkLinkProtocol.TEMPLATE_ID, kakaoLinkResponse.getTemplateId());
+            response.put(KakaoTalkLinkProtocol.TEMPLATE_ARGS, kakaoLinkResponse.getTemplateArgs());
+            response.put(KakaoTalkLinkProtocol.TEMPLATE_MSG, kakaoLinkResponse.getTemplateMsg());
+            response.put(KakaoTalkLinkProtocol.WARNING_MSG, kakaoLinkResponse.getWarningMsg());
+            response.put(KakaoTalkLinkProtocol.ARGUMENT_MSG, kakaoLinkResponse.getArgumentMsg());
+
+
+        } catch (JSONException e) {
+            Log.v(LOG_TAG, "kakao : handleResult error - " + e.toString());
+        }
+        return response;
+    }
+
+    private class KakaoLinkImageUploadResponseCallback extends ResponseCallback<ImageUploadResponse> {
+
+        private CallbackContext callbackContext;
+
+        public KakaoLinkImageUploadResponseCallback(final CallbackContext callbackContext) {
+            this.callbackContext = callbackContext;
+        }
+
+
+        @Override
+        public void onFailure(ErrorResult errorResult) {
+            callbackContext.error("" + errorResult);
+        }
+
+        @Override
+        public void onSuccess(ImageUploadResponse result) {
+            callbackContext.success(result.getOriginal().getUrl());
+//            callbackContext.success(handleKakaoLinkImageUploadResponseResult(result).toString());
+        }
+    }
+
+    private class KakaoLinkImageDeleteResponseCallback extends ResponseCallback<ImageDeleteResponse> {
+
+        private CallbackContext callbackContext;
+
+        public KakaoLinkImageDeleteResponseCallback(final CallbackContext callbackContext) {
+            this.callbackContext = callbackContext;
+        }
+
+
+        @Override
+        public void onFailure(ErrorResult errorResult) {
+            callbackContext.error("" + errorResult);
+        }
+
+        @Override
+        public void onSuccess(ImageDeleteResponse result) {
+
+            callbackContext.success("success " + result.toString());
+        }
+    }
+
+    private class KakaoLinkResponseCallback extends ResponseCallback<KakaoLinkResponse> {
+
+        private CallbackContext callbackContext;
+
+        public KakaoLinkResponseCallback(final CallbackContext callbackContext) {
+            this.callbackContext = callbackContext;
+        }
+
+
+        @Override
+        public void onFailure(ErrorResult errorResult) {
+            callbackContext.error("" + errorResult);
+        }
+
+        @Override
+        public void onSuccess(KakaoLinkResponse result) {
+
+            callbackContext.success("" + handleKakaoLinkResponseResult(result));
+        }
     }
 
     private class SessionCallback implements ISessionCallback {

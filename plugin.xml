@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
    id="cordova-plugin-kakao-sdk"
    name="cordova-plugin-kakao-sdk"
-   version="1.0.0">
+   version="2.0.0">
 
     <name>KakaoCordovaSDK</name>
     <description>Kakao Cordova SDK Plugin</description>
@@ -41,6 +41,7 @@
         
         <config-file target="AndroidManifest.xml" parent="/manifest">
             <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
         </config-file>
         
         <config-file target="AndroidManifest.xml" parent="application">
@@ -59,6 +60,7 @@
         <framework src="src/android/kakao.gradle" custom="true" type="gradleReference" />
 		<source-file src="src/android/KakaoCordovaSDK.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/KakaoResources.java" target-dir="src/com/raccoondev85/plugin/kakao" />
+        <source-file src="src/android/KakaoStoryLink.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/res/values/styles.xml" target-dir="res/values" />
         <source-file src="src/android/res/drawable/account.png" target-dir="res/drawable" />
         <source-file src="src/android/res/drawable/btn_x.png" target-dir="res/drawable" />
@@ -96,15 +98,22 @@
             <string>kakaokompassauth</string>
             <string>storykompassauth</string>
             <string>kakaolink</string>
+            <string>storylink</string>
             <string>kakaotalk-5.9.7</string>
             <string>kakaostory-2.9.0</string>
           </array>
         </config-file>
         
         <framework src="QuartzCore.framework" />
+        <framework src="src/ios/KakaoCommon.framework" custom="true" />
+        <framework src="src/ios/KakaoLink.framework" custom="true" />
+        <framework src="src/ios/KakaoMessageTemplate.framework" custom="true" />
         <framework src="src/ios/KakaoOpenSDK.framework" custom="true" />
 
         <source-file src="src/ios/KakaoCordovaSDK.m" />
         <header-file src="src/ios/KakaoCordovaSDK.h" />
+        <source-file src="src/ios/KakaoCordovaStoryLinkHelper.m" />
+        <header-file src="src/ios/KakaoCordovaStoryLinkHelper.h" />
+        
     </platform>
 </plugin>

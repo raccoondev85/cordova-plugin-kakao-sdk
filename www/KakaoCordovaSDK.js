@@ -21,6 +21,46 @@ var KakaoCordovaSDK = {
   getAccessToken: function(successCallback, errorCallback) {
     exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'getAccessToken', []);
   },
+
+  sendLinkFeed: function(template, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkFeed', [template]);
+  },
+
+  sendLinkList: function(template, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkList', [template]);
+  },
+
+  sendLinkLocation: function(template, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkLocation', [template]);
+  },
+
+  sendLinkCommerce: function(template, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkCommerce', [template]);
+  },
+
+  sendLinkText: function(template, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkText', [template]);
+  },
+
+  sendLinkScrap: function(template, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkScrap', [template]);
+  },
+
+  sendLinkCustom: function(template, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkCustom', [template]);
+  },
+
+  uploadImage: function(option, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'uploadImage', [option]);
+  },
+
+  deleteUploadedImage: function(option, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'deleteUploadedImage', [option]);
+  },
+
+  postStory: function(option, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'postStory', [option]);
+  },
 };
 
 module.exports = KakaoCordovaSDK;
