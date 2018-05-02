@@ -58,40 +58,44 @@
         if ([[KOSession sharedSession] isOpen]) {
             // login success
             NSLog(@"login succeeded.");
-            [KOSessionTask meTaskWithCompletionHandler:^(KOUser* result, NSError *error) {
-                CDVPluginResult* pluginResult = nil;
-                if (result) {
-                    // success
-                    
-                    NSLog(@"%@", result);
-                    NSMutableDictionary *userSession =  [NSMutableDictionary new];
-                    NSDictionary *userIdAndEmail = @{
-                                                     @"accessToken": [KOSession sharedSession].accessToken,
-                                                     @"id": result.ID, 
-                                                     @"email": result.email, 
-                                                     @"isVerifiedEmail": @(result.isVerifiedEmail)};
-                    NSDictionary *userProperties = result.properties;
-                    NSDictionary *userExtras = result.extras;
-                    [userSession addEntriesFromDictionary: userIdAndEmail];
-                    [userSession addEntriesFromDictionary: userProperties];
-                    [userSession addEntriesFromDictionary: userExtras];
-                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:userSession];
-                } else {
-                    // failed
-                    NSLog(@"login session failed.");
-                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-                }
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            }];
+            [self requestMe:command];
+            
         } else {
             // failed
             NSLog(@"login failed.");
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
         }
         
         
     } authTypes:authTypes];
+}
+
+- (void)requestMe:(CDVInvokedUrlCommand*)command {
+    [KOSessionTask meTaskWithCompletionHandler:^(KOUser* result, NSError *error) {
+        CDVPluginResult* pluginResult = nil;
+        if (result) {
+            // success
+            
+            NSLog(@"%@", result);
+            NSMutableDictionary *userSession =  [NSMutableDictionary new];
+            NSDictionary *userIdAndEmail = @{
+                                             @"accessToken": [KOSession sharedSession].accessToken,
+                                             @"id": result.ID,
+                                             @"email": result.email,
+                                             @"isVerifiedEmail": @(result.isVerifiedEmail)};
+            NSDictionary *userProperties = result.properties;
+            NSDictionary *userExtras = result.extras;
+            [userSession addEntriesFromDictionary: userIdAndEmail];
+            [userSession addEntriesFromDictionary: userProperties];
+            [userSession addEntriesFromDictionary: userExtras];
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:userSession];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        } else {
+            // failed
+            NSLog(@"login session failed.");
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+        }
+    }];
 }
 
 - (void)logout:(CDVInvokedUrlCommand*)command
@@ -105,8 +109,8 @@
         } else {
             // failed
             NSLog(@"failed to logout.");
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+
         }
     }];
     
@@ -124,13 +128,12 @@
         } else {
             // failed
             NSLog(@"failed to unlink.");
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
         }
     }];
-    
-    
 }
+
+
 
 
 - (void)getAccessToken: (CDVInvokedUrlCommand*)command
@@ -151,8 +154,7 @@
         // content
         KMTContentObject* feedContentObject = [self getKMTContentObject:options[@"content"]];
         if(feedContentObject == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Either Content or Content.title/link/imageURL is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
             return;
         }
         feedTemplateBuilder.content = feedContentObject;
@@ -189,8 +191,7 @@
         
         // 헤더 타이틀 및 링크
         if(options[@"headerTitle"] == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"headerTitle is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerTitle is null."];
             return;
         }
         listTemplateBuilder.headerTitle = options[@"headerTitle"];
@@ -198,16 +199,14 @@
         // headerLink
         KMTLinkObject* linkObject = [self getKMTLinkObject:options[@"headerLink"]];
         if(linkObject == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"headerLink is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerLink is null."];
             return;
         }
         listTemplateBuilder.headerLink = linkObject;
         
         // 컨텐츠 목록
         if(FALSE == [self addContentsArray:options[@"contents"] templateBuilder:listTemplateBuilder]){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Either Content or Content.title/link/imageURL is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
             return;
         }
         
@@ -235,8 +234,7 @@
         
         // 주소
         if(options[@"address"] == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"address is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"address is null."];
             return;
         }
         locationTemplateBuilder.address = options[@"address"];
@@ -248,8 +246,7 @@
         // content
         KMTContentObject* locationContentObject = [self getKMTContentObject:options[@"content"]];
         if(locationContentObject == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Either Content or Content.title/link/imageURL is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
             return;
         }
         locationTemplateBuilder.content = locationContentObject;
@@ -284,8 +281,7 @@
         // content
         KMTContentObject* commerceContentObject = [self getKMTContentObject:options[@"content"]];
         if(commerceContentObject == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Either Content or Content.title/link/imageURL is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
             return;
         }
         commerceTemplateBuilder.content = commerceContentObject;
@@ -293,8 +289,7 @@
         // commerce
         KMTCommerceObject* feedCommerceObject = [self getKMTCommerceObject:options[@"commerce"]];
         if(feedCommerceObject == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"regularPrice is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"regularPrice is null."];
             return;
         }
         commerceTemplateBuilder.commerce = feedCommerceObject;
@@ -324,8 +319,7 @@
         
         // text
         if(options[@"text"] == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"headerTitle is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerTitle is null."];
             return;
         }
         textTemplateBuilder.text = options[@"text"];
@@ -333,8 +327,7 @@
         // link
         KMTLinkObject* linkObject = [self getKMTLinkObject:options[@"link"]];
         if(linkObject == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"link is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"link is null."];
             return;
         }
         textTemplateBuilder.link = linkObject;
@@ -361,8 +354,7 @@
     
     // 스크랩할 웹페이지 URL
     if(options[@"url"] == NULL){
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"url is null."];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
         return;
     }
     NSURL *URL = [NSURL URLWithString:options[@"url"]];
@@ -379,8 +371,7 @@
     } failure:^(NSError * _Nonnull error) {
         
         NSLog(@"error: %@", error);
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
         
     }];
 }
@@ -391,8 +382,7 @@
     NSLog(@"%@", options);
     // 템플릿 ID
     if(options[@"templateId"] == NULL){
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"templateId is null."];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"templateId is null."];
         return;
     }
     NSString *templateId = options[@"templateId"];
@@ -416,10 +406,7 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         
     } failure:^(NSError * _Nonnull error) {
-        
-        NSLog(@"error: %@", error);
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
         
     }];
     
@@ -438,8 +425,7 @@
     } failure:^(NSError * _Nonnull error) {
         
         NSLog(@"error: %@", error);
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
         
     }];
 }
@@ -627,8 +613,7 @@
         [self uploadLocalImage];
     }else if([options[@"fileOrUrl"] isEqualToString:@"url"]){
         if(options[@"url"] == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"url is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
             return;
         }
         [self scrapRemoteImage:options[@"url"]];
@@ -645,14 +630,12 @@
     NSLog(@"%@", options);
     
     if(options[@"url"] == NULL){
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"url is null."];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
         return;
     }
     if([[options[@"url"] stringByTrimmingCharactersInSet:
          [NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]){
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"url is empty."];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
         return;
     }
     NSURL *imageURL = [NSURL URLWithString:options[@"url"]];
@@ -662,8 +645,7 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     } failure:^(NSError * _Nonnull error) {
         // 삭제 실패
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
 
     }];
 
@@ -689,10 +671,7 @@
         CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[original.URL absoluteString]];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
     } failure:^(NSError * _Nonnull error) {
-        
-        // 업로드 실패
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+        [self errorHandler:self.callbackId error:error errorCode:0 errorMessage:nil];
         
     }];
 }
@@ -712,10 +691,7 @@
         CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[original.URL absoluteString]];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
     } failure:^(NSError * _Nonnull error) {
-        
-        // 업로드 실패
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+        [self errorHandler:self.callbackId error:error errorCode:0 errorMessage:nil];
         
     }];
 }
@@ -728,13 +704,11 @@
     
     if (![KakaoCordovaStoryLinkHelper canOpenStoryLink]) {
         NSLog(@"Cannot open kakao story.");
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Cannot open kakao story."];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Cannot open kakao story."];
         return;
     }
     if(options[@"post"] == NULL || options[@"appver"] == NULL ){
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"post or appver is null."];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"post or appver is null."];
         return;
     }
     NSString* post = options[@"post"];
@@ -757,8 +731,7 @@
         NSString* type = (options[@"urlinfo"])[@"type"];
         
         if(title == NULL){
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"title in urlinfo is null."];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"title in urlinfo is null."];
             return;
         }
         scrapInfo.title = title;
@@ -803,13 +776,38 @@
         CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"success!"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }else{
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"something went wrong."];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"something went wrong."];
     }
 }
 
 
-
+- (void)errorHandler:(NSString*)callbackId error:(NSError*)error errorCode:(NSInteger)errorCode errorMessage:(NSString*)errorMessage {
+    
+    NSInteger _errorCode = -777;
+    NSString* _errorMessage = @"";
+    NSString* _domain = @"";
+    
+    if(error == NULL){
+        if(errorCode != 0){
+            _errorCode = errorCode;
+        }
+        _errorMessage = errorMessage;
+    }else{
+        _errorCode = [error code];
+        _errorMessage = [error localizedDescription];
+        _domain = [error domain];
+    }
+    
+    NSDictionary *extraErrorDic = @{@"domain": _domain};
+    NSDictionary *errorDic = @{@"osType": @"ios",
+                               @"errorCode": @(_errorCode),
+                               @"errorMessage": _errorMessage,
+                               @"extra":extraErrorDic
+                               };
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:errorDic];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+}
 
 - (void)openURL:(NSNotification *)notification {
     NSLog(@"handle url1: %@", [notification object]);

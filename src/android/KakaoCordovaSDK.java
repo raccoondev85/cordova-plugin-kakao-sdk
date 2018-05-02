@@ -23,6 +23,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.kakao.auth.ApiResponseCallback;
 import com.kakao.kakaolink.internal.KakaoTalkLinkProtocol;
 import com.kakao.kakaolink.v2.KakaoLinkService;
 import com.kakao.kakaolink.v2.KakaoLinkResponse;
@@ -59,6 +60,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -74,11 +76,12 @@ public class KakaoCordovaSDK extends CordovaPlugin {
     private static final String LOG_TAG = "KakaoCordovaSDK";
     private static volatile Activity currentActivity;
     private SessionCallback sesstionCallback;
+    private KakaoMeResponseCallback kakaoMeResponseCallback;
     private KakaoLinkResponseCallback kakaoLinkResponseCallback;
     private KakaoLinkImageUploadResponseCallback kakaoLinkImageUploadResponseCallback;
     private KakaoLinkImageDeleteResponseCallback kakaoLinkImageDeleteResponseCallback;
     private static AuthType[] customAuthTypes;
-    private static final int GALLERY_REQUEST_CODE = 0;
+    private static final int GALLERY_REQUEST_CODE = 9238;
     private String[] STORAGE_PERMISSIONS = { Manifest.permission.READ_EXTERNAL_STORAGE };
     private final int REQUEST_EXTERNAL_STORAGE = 1;
 
@@ -119,8 +122,13 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 	    } else if (action.equals("getAccessToken")) {
             sesstionCallback = new SessionCallback(callbackContext);
             Session.getCurrentSession().addCallback(sesstionCallback);
-	        this.getAccessToken(callbackContext);
-	        return true;
+            this.getAccessToken(callbackContext);
+            return true;
+        }  else if (action.equals("requestMe")) {
+            sesstionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sesstionCallback);
+            this.requestMe(callbackContext);
+            return true;
         } else if (action.equals("sendLinkFeed")) {
             kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
             this.sendLinkFeed(callbackContext, options);
@@ -173,10 +181,15 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             }
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         } finally {
             onClickLoginButton(getAuthTypes());
         }
+    }
+
+    private void requestMe(final CallbackContext callbackContext){
+        kakaoMeResponseCallback = new KakaoMeResponseCallback(callbackContext);
+        UserManagement.getInstance().requestMe(kakaoMeResponseCallback);
     }
 
     private void logout(final CallbackContext callbackContext) {
@@ -201,12 +214,12 @@ public class KakaoCordovaSDK extends CordovaPlugin {
                 UserManagement.getInstance().requestUnlink(new UnLinkResponseCallback() {
                     @Override
                     public void onFailure(ErrorResult errorResult) {
-                        callbackContext.error("kakao : SessionCallback.onSessionOpened.requestUnlink.onFailure - " + errorResult);
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
                     }
 
                     @Override
                     public void onSessionClosed(ErrorResult errorResult) {
-                        Log.v(LOG_TAG, "kakao : SessionCallback.onSessionOpened.requestUnlink.onSessionClosed - " + errorResult);
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
                         Session.getCurrentSession().checkAndImplicitOpen();
                     }
 
@@ -217,7 +230,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
                     @Override
                     public void onNotSignedUp() {
-                        callbackContext.error("this user is not signed up");
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "this user is not signed up");
                     }
                 });
             }
@@ -233,17 +246,17 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             final JSONObject object = options.getJSONObject(0);
             if(object == null){
-                callbackContext.error("feed template is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "feed template is null.");
                 return;
             }
             if (!object.has("content")){
-                callbackContext.error("content is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "content is null.");
                 return;
             }
 
             ContentObject contentObject = getContentObject(object.getJSONObject("content"));
             if(contentObject == null){
-                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "Either Content or Content.title/link/imageURL is null.");
                 return;
             }
 
@@ -262,7 +275,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -270,32 +283,32 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             final JSONObject object = options.getJSONObject(0);
             if(object == null){
-                callbackContext.error("list template is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "list template is null.");
                 return;
             }
             if (!object.has("headerTitle")){
-                callbackContext.error("headerTitle is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "headerTitle is null.");
                 return;
             }
             if (!object.has("headerLink")){
-                callbackContext.error("headerLink is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "headerLink is null.");
                 return;
             }
             if (!object.has("contents")){
-                callbackContext.error("contents is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "contents is null.");
                 return;
             }
 
             LinkObject linkObject = getLinkObject(object.getJSONObject("headerLink"));
             if(linkObject == null){
-                callbackContext.error("headerLink is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "headerLink is null.");
                 return;
             }
             ListTemplate.Builder listTemplateBuilder = ListTemplate.newBuilder(
                     object.getString("headerTitle"),linkObject);
 
             if(!addContentsArray(object, listTemplateBuilder)){
-                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "Either Content or Content.title/link/imageURL is null.");
                 return;
             }
 
@@ -305,7 +318,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -313,21 +326,21 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             final JSONObject object = options.getJSONObject(0);
             if(object == null){
-                callbackContext.error("location template is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "location template is null.");
                 return;
             }
             if (!object.has("content")){
-                callbackContext.error("content is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "content is null.");
                 return;
             }
             if (!object.has("address")){
-                callbackContext.error("address is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "address is null.");
                 return;
             }
 
             ContentObject contentObject = getContentObject(object.getJSONObject("content"));
             if(contentObject == null){
-                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "Either Content or Content.title/link/imageURL is null.");
                 return;
             }
 
@@ -349,7 +362,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -357,27 +370,27 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             final JSONObject object = options.getJSONObject(0);
             if(object == null){
-                callbackContext.error("commerce template is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "commerce template is null.");
                 return;
             }
             if (!object.has("content")){
-                callbackContext.error("content is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "content is null.");
                 return;
             }
             if (!object.has("commerce")){
-                callbackContext.error("commerce is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "commerce is null.");
                 return;
             }
 
             ContentObject contentObject = getContentObject(object.getJSONObject("content"));
             if(contentObject == null){
-                callbackContext.error("Either Content or Content.title/link/imageURL is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "Either Content or Content.title/link/imageURL is null.");
                 return;
             }
 
             CommerceDetailObject commerceDetailObject = getCommerceDetailObject(object.getJSONObject("commerce"));
             if(commerceDetailObject == null){
-                callbackContext.error("regularPrice is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "regularPrice is null.");
                 return;
             }
 
@@ -389,7 +402,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -397,21 +410,21 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             final JSONObject object = options.getJSONObject(0);
             if(object == null){
-                callbackContext.error("text template is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "text template is null.");
                 return;
             }
             if (!object.has("text")){
-                callbackContext.error("text is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "text is null.");
                 return;
             }
             if (!object.has("link")){
-                callbackContext.error("link is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "link is null.");
                 return;
             }
 
             LinkObject linkObject = getLinkObject(object.getJSONObject("link"));
             if(linkObject == null){
-                callbackContext.error("link is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "link is null.");
                 return;
             }
             TextTemplate.Builder textTemplateBuilder = TextTemplate.newBuilder(
@@ -428,7 +441,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -436,11 +449,11 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             final JSONObject object = options.getJSONObject(0);
             if(object == null){
-                callbackContext.error("scrap template is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "scrap template is null.");
                 return;
             }
             if (!object.has("url")){
-                callbackContext.error("url is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "url is null.");
                 return;
             }
 
@@ -448,7 +461,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -456,11 +469,11 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             final JSONObject object = options.getJSONObject(0);
             if(object == null){
-                callbackContext.error("custom template is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "custom template is null.");
                 return;
             }
             if (!object.has("templateId")){
-                callbackContext.error("templateId is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "templateId is null.");
                 return;
             }
 
@@ -479,7 +492,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -495,7 +508,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
                 uploadImageForLink();
             }else if("url".equals(object.getString("fileOrUrl"))){
                 if(!object.has("url")){
-                    callbackContext.error("url is null.");
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, "url is null.");
                     return;
                 }
                 scrapRemoteImage(object.getString("url"));
@@ -505,7 +518,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -528,7 +541,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
             KakaoLinkService.getInstance().uploadImage(currentActivity, false, imageFile, kakaoLinkImageUploadResponseCallback);
         } catch (Exception e) {
-            kakaoLinkImageUploadResponseCallback.callbackContext.error(e.toString());
+            KakaoCordovaErrorHandler.errorHandler(kakaoLinkImageUploadResponseCallback.callbackContext, new ErrorResult(e));
         }
     }
 
@@ -537,7 +550,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         try {
             KakaoLinkService.getInstance().scrapImage(currentActivity, false, url, kakaoLinkImageUploadResponseCallback);
         } catch (Exception e) {
-            kakaoLinkImageUploadResponseCallback.callbackContext.error(e.toString());
+            KakaoCordovaErrorHandler.errorHandler(kakaoLinkImageUploadResponseCallback.callbackContext, new ErrorResult(e));
         }
     }
 
@@ -546,7 +559,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             final JSONObject object = options.getJSONObject(0);
 
             if (!object.has("url")){
-                callbackContext.error("KLDeleteImageConfig is null");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "KLDeleteImageConfig is null.");
                 return;
             }
 
@@ -556,7 +569,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         } catch(Exception e) {
             e.printStackTrace();
-            callbackContext.error("Exception error : " + e);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
     }
 
@@ -565,12 +578,12 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
             final JSONObject object = options.getJSONObject(0);
             if (object == null) {
-                callbackContext.error("KLPostStoryConfig is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "KLPostStoryConfig is null.");
                 return;
             }
 
             if (!object.has("post") || !object.has("appver")) {
-                callbackContext.error("post or appver is null.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "post or appver is null.");
                 return;
             }
 
@@ -579,7 +592,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
             // check, intent is available.
             if (!storyLink.isAvailableIntent()) {
-                callbackContext.error("KakaoStory not installed.");
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "KakaoStory not installed.");
                 return;
             }
 
@@ -599,7 +612,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
                 JSONObject urlinfo = object.getJSONObject("urlinfo");
                 if(!urlinfo.has("title")){
-                    callbackContext.error("title in urlinfo is null.");
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, "title in urlinfo is null.");
                     return;
                 }
                 urlInfoAndroid.put("title", urlinfo.getString("title"));
@@ -647,7 +660,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             callbackContext.success("success!");
 
         }catch (Exception e){
-            callbackContext.error(e.getMessage());
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
 
 
@@ -858,7 +871,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     uploadImageForLink();
                 } else {
-                    kakaoLinkImageUploadResponseCallback.callbackContext.error("User did not agree to give storage permission.");
+                    KakaoCordovaErrorHandler.errorHandler(kakaoLinkImageUploadResponseCallback.callbackContext, "User did not agree to give storage permission.");
                 }
                 break;
             default:
@@ -945,7 +958,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onFailure(ErrorResult errorResult) {
-            callbackContext.error("" + errorResult);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
         }
 
         @Override
@@ -966,7 +979,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onFailure(ErrorResult errorResult) {
-            callbackContext.error("" + errorResult);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
         }
 
         @Override
@@ -987,7 +1000,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onFailure(ErrorResult errorResult) {
-            callbackContext.error("" + errorResult);
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
         }
 
         @Override
@@ -995,6 +1008,37 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
             callbackContext.success("" + handleKakaoLinkResponseResult(result));
         }
+    }
+
+    private class KakaoMeResponseCallback extends MeResponseCallback {
+
+        private CallbackContext callbackContext;
+
+        public KakaoMeResponseCallback(final CallbackContext callbackContext) {
+            this.callbackContext = callbackContext;
+        }
+
+        @Override
+        public void onFailure(ErrorResult errorResult) {
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+        }
+
+        @Override
+        public void onSessionClosed(ErrorResult errorResult) {
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+            Session.getCurrentSession().checkAndImplicitOpen();
+        }
+
+        @Override
+        public void onSuccess(UserProfile userProfile) {
+            callbackContext.success(handleLoginResult(userProfile, Session.getCurrentSession().getTokenInfo().getAccessToken()));
+        }
+
+        @Override
+        public void onNotSignedUp() {
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, "this user is not signed up");
+        }
+
     }
 
     private class SessionCallback implements ISessionCallback {
@@ -1007,37 +1051,13 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onSessionOpened() {
-            Log.v(LOG_TAG, "kakao : SessionCallback.onSessionOpened");
-
-            UserManagement.getInstance().requestMe(new MeResponseCallback() {
-                @Override
-                public void onFailure(ErrorResult errorResult) {
-                    callbackContext.error("kakao : SessionCallback.onSessionOpened.requestMe.onFailure - " + errorResult);
-                }
-
-                @Override
-                public void onSessionClosed(ErrorResult errorResult) {
-                    Log.v(LOG_TAG, "kakao : SessionCallback.onSessionOpened.requestMe.onSessionClosed - " + errorResult);
-                    Session.getCurrentSession().checkAndImplicitOpen();
-                }
-
-                @Override
-                public void onSuccess(UserProfile userProfile) {
-                    callbackContext.success(handleLoginResult(userProfile, Session.getCurrentSession().getTokenInfo().getAccessToken()));
-                }
-
-                @Override
-                public void onNotSignedUp() {
-                    callbackContext.error("this user is not signed up");
-                }
-
-            });
+            requestMe(callbackContext);
         }
 
         @Override
         public void onSessionOpenFailed(KakaoException exception) {
             if (exception != null) {
-                Log.v(LOG_TAG, "kakao : onSessionOpenFailed" + exception.toString());
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, exception.toString());
             }
         }
     }
@@ -1143,19 +1163,18 @@ public class KakaoCordovaSDK extends CordovaPlugin {
     private List<AuthType> getAuthTypes() {
         final List<AuthType> availableAuthTypes = new ArrayList();
 
+        if (Session.getCurrentSession().getAuthCodeManager().isTalkLoginAvailable()) {
+            availableAuthTypes.add(AuthType.KAKAO_TALK);
+        }
+        if (Session.getCurrentSession().getAuthCodeManager().isStoryLoginAvailable()) {
+            availableAuthTypes.add(AuthType.KAKAO_STORY);
+        }
+        availableAuthTypes.add(AuthType.KAKAO_ACCOUNT);
+
         AuthType[] authTypes;
 
         if(getCustomAuthTypes() == null){
             authTypes = KakaoSDK.getAdapter().getSessionConfig().getAuthTypes();
-
-            if (Session.getCurrentSession().getAuthCodeManager().isTalkLoginAvailable()) {
-                availableAuthTypes.add(AuthType.KAKAO_TALK);
-            }
-            if (Session.getCurrentSession().getAuthCodeManager().isStoryLoginAvailable()) {
-                availableAuthTypes.add(AuthType.KAKAO_STORY);
-            }
-            availableAuthTypes.add(AuthType.KAKAO_ACCOUNT);
-
         } else {
             authTypes = getCustomAuthTypes();
         }
@@ -1285,6 +1304,8 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         });
 
     }
+
+
 
     /**
      * 각 로그인 방법들의 text, icon, 실제 AuthTYpe들을 담고 있는 container class.

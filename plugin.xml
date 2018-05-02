@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
    id="cordova-plugin-kakao-sdk"
    name="cordova-plugin-kakao-sdk"
-   version="2.0.0">
+   version="2.0.1">
 
     <name>KakaoCordovaSDK</name>
     <description>Kakao Cordova SDK Plugin</description>
@@ -61,6 +61,7 @@
 		<source-file src="src/android/KakaoCordovaSDK.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/KakaoResources.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/KakaoStoryLink.java" target-dir="src/com/raccoondev85/plugin/kakao" />
+        <source-file src="src/android/KakaoCordovaErrorHandler.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/res/values/styles.xml" target-dir="res/values" />
         <source-file src="src/android/res/drawable/account.png" target-dir="res/drawable" />
         <source-file src="src/android/res/drawable/btn_x.png" target-dir="res/drawable" />

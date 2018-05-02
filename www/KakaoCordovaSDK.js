@@ -22,6 +22,10 @@ var KakaoCordovaSDK = {
     exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'getAccessToken', []);
   },
 
+  requestMe: function(successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'requestMe', []);
+  },
+
   sendLinkFeed: function(template, successCallback, errorCallback) {
     exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'sendLinkFeed', [template]);
   },
