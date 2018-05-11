@@ -4,9 +4,15 @@ Kakao Cordova SDK Plugin (카카오 코르도바 SDK 플러그인)
 Version is updated to 2.0.0
 
 All functions in KakaoLink SDK are included now.
-(see https://developers.kakao.com/docs/ios/kakaotalk-link)
+*Kakao Official Documents
+**Android:  
+  - Login: https://developers.kakao.com/docs/android/user-management
+  - Link: https://developers.kakao.com/docs/android/kakaotalk-link
+**iOS:  
+  - Login: https://developers.kakao.com/docs/ios/user-management
+  - Link: https://developers.kakao.com/docs/ios/kakaotalk-link
 
-README will be updated soon for HOW-TO.
+
 
 ## Development Environment and ETC
 |type|version
@@ -131,6 +137,8 @@ Get user's profile info
   }
 ```
 
+
+
 # Link
 ## Link Parameters
 All the url properties(webURL or mobileWebURL) must be set in the domatin section in the Kakao developer console in order to work as expected.
@@ -176,6 +184,7 @@ All the url properties(webURL or mobileWebURL) must be set in the domatin sectio
 |---|---|---    
 |title|string|mandatory
 |link|KLLinkObject|mandatory
+
 
 ### Templates
 #### `KLFeedTemplate`
@@ -233,6 +242,7 @@ All the url properties(webURL or mobileWebURL) must be set in the domatin sectio
 |title|string|optional
 |description|string|optional
 
+
 ### Configs
 #### `KLUploadImageConfig`
 |name|type|required
@@ -272,6 +282,8 @@ All the url properties(webURL or mobileWebURL) must be set in the domatin sectio
 |ScrapTypeBook|4
 |ScrapTypeArticle|5
 |ScrapTypeProfile|6
+
+
 
 
 ## Link Methods
@@ -332,6 +344,7 @@ Send a default feed template to kakao talk
       });
   }
 ```
+
 
 ### `sendLinkList(listTemplate: KLListTemplate)`
 Send a default list template to kakao talk
@@ -449,6 +462,7 @@ Send a default location template to kakao talk
   }
 ```
 
+
 ### `sendLinkCommerce(commerceTemplate: KLCommerceTemplate)`
 Send a default commerce template to kakao talk
 ```
@@ -505,6 +519,7 @@ Send a default commerce template to kakao talk
   }
 ```
 
+
 ### `sendLinkText(textTemplate: KLTextTemplate)`
 Send a default text template to kakao talk
 ```
@@ -551,6 +566,7 @@ Send a default text template to kakao talk
   }
 ```
 
+
 ### `sendLinkScrap(scrapTemplate: KLScrapTemplate)`
 Send a scrap template to kakao talk
 ```
@@ -574,6 +590,7 @@ Send a scrap template to kakao talk
     });
   }
 ```
+
 
 ### `sendLinkCustom(scrapTemplate: KLCustomTemplate)`
 Send a custom template to kakao talk.
@@ -605,6 +622,7 @@ it is also required to put `${title}` and `${description}` as value in the templ
   }
 ```
 
+
 ### `uploadImage(uploadImageConfig: KLUploadImageConfig)`
 While Kakao doesn't allow you to upload image files themselves, Kakao supports to generate a new url, which saved in kakao server for 20 days, so that you could use in the templates as url values.
 ```
@@ -628,6 +646,7 @@ While Kakao doesn't allow you to upload image files themselves, Kakao supports t
     });
   }
 ```
+
 
 ### `deleteUploadedImage(deleteImageConfig: KLDeleteImageConfig)`
 Delete the uploaded image from kakao server.
