@@ -16,6 +16,9 @@ README will be updated soon for HOW-TO.
 |Cordova Platforms Android|6.4.0
 |Cordova Platforms IOS|4.5.4
 |Ionic Framework|ionic-angular 3.9.2
+|KakaoCommon.framework(ios)|1.7.0
+|KakaoLink.framework(ios)|1.7.0
+|KakaoMessageTemplate.framework(ios)|1.7.0
 |KakaoOpenSDK.framework(ios)|1.7.0
 |com.kakao.sdk:kakaotalk(android)|1.10.1
 |com.kakao.sdk:kakaolink(android)|1.10.1
@@ -44,7 +47,8 @@ import { KakaoCordovaSDK } from 'kakao-sdk';
 })
 ```
 
-## Methods
+# Login
+## Login Methods
 ### `login()`
 
 
@@ -109,3 +113,573 @@ Get current access token.
 it returns the current access token.
 
 
+### `requestMe()`
+Get user's profile info
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+  this._kakaoCordovaSDK
+      .requestMe()
+      .then(
+        res => {
+          console.log(res);
+        },
+        err => {
+        }
+      )
+      .catch(err => {
+      });
+  }
+```
+
+# Link
+## Link Parameters
+All the url properties(webURL or mobileWebURL) must be set in the domatin section in the Kakao developer console in order to work as expected.
+
+### Objects
+#### `KLContentObject`
+|name|type|required
+|---|---|---
+|title|string|mandatory
+|link|KLLinkObject|mandatory
+|imageURL|string|mandatory
+|desc|string|optional
+|imageWidth|string|optional
+|imageHeight|string|optional
+
+#### `KLLinkObject`
+|name|type|required
+|---|---|---
+|webURL|string|optional
+|mobileWebURL|string|optional
+|androidExecutionParams|string|optional
+|iosExecutionParams|string|optional
+
+#### `KLSocialObject`
+|name|type|required
+|---|---|---
+|likeCount|number|optional
+|commentCount|number|optional
+|sharedCount|number|optional
+|viewCount|number|optional
+|subscriberCount|number|optional
+
+#### `KLCommerceObject`
+|name|type|required
+|---|---|---
+|regularPrice|number|mandatory
+|discountPrice|number|optional
+|discountRate|number|optional
+|fixedDiscountPrice|number|optional
+
+#### `KLButtonObject`
+|name|type|required
+|---|---|---    
+|title|string|mandatory
+|link|KLLinkObject|mandatory
+
+### Templates
+#### `KLFeedTemplate`
+|name|type|required
+|---|---|---    
+|content|KLContentObject|mandatory
+|social|KLSocialObject|optional
+|buttonTitle|string|optional
+|buttons|KLButtonObject[]|optional
+
+#### `KLListTemplate`
+|name|type|required
+|---|---|---   
+|headerTitle|string|mandatory
+|headerLink|KLLinkObject|mandatory
+|contents|KLContentObject[]|mandatory
+|buttonTitle|string|optional
+|buttons|KLButtonObject[]|optional
+
+#### `KLLocationTemplate`
+|name|type|required
+|---|---|---   
+|address|string|mandatory
+|content|KLContentObject|mandatory
+|addressTitle|string|optional
+|social|KLSocialObject|optional
+|buttonTitle|string|optional
+|buttons|KLButtonObject[]|optional
+
+#### `KLCommerceTemplate`
+|name|type|required
+|---|---|---   
+|content|KLContentObject|mandatory
+|commerce|KLCommerceObject|mandatory
+|buttonTitle|string|optional
+|buttons|KLButtonObject[]|optional
+
+#### `KLTextTemplate`
+|name|type|required
+|---|---|---  
+|text|string|mandatory
+|link|KLLinkObject|mandatory
+|buttonTitlestring|optional
+|buttonsKLButtonObject[]|optional
+
+#### `KLScrapTemplate`
+|name|type|required
+|---|---|---  
+|url|string|mandatory
+
+#### `KLCustomTemplate`
+|name|type|required
+|---|---|---  
+|templateId|string|mandatory
+|title|string|optional
+|description|string|optional
+
+### Configs
+#### `KLUploadImageConfig`
+|name|type|required
+|---|---|---  
+|fileOrUrl|'file' or 'url'|mandatory
+|url|string|optional(in case fileOrUrl property is 'url')
+
+#### `KLDeleteImageConfig`
+|name|type|required
+|---|---|---  
+|url|string|mandatory
+
+#### `KLPostStoryConfig`
+|name|type|required
+|---|---|---  
+|post|string|mandatory
+|appver|string|mandatory
+|appid|string|optional
+|appname|string|optional
+|urlinfo|KLPostStoryUrlInfo|optional
+
+#### `KLPostStoryUrlInfo`
+|name|type|required
+|---|---|---  
+|title|string|mandatory
+|desc|string|optional
+|imageURLs|string[]|optional
+|type|ScrapType|optional
+
+#### `ScrapType`
+|name|value
+|---|--- 
+|ScrapTypeNone|0
+|ScrapTypeWebsite|1
+|ScrapTypeVideo|2
+|ScrapTypeMusic|3
+|ScrapTypeBook|4
+|ScrapTypeArticle|5
+|ScrapTypeProfile|6
+
+
+## Link Methods
+### `sendLinkFeed(feedTemplate: KLFeedTemplate)`
+Send a default feed template to kakao talk
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let feedLink: KLLinkObject = {
+      webURL: 'url that registered in the domain section in kakao developer console',
+    };
+
+    let feedSocial: KLSocialObject = {
+      likeCount: 50,
+    };
+
+    let feedButtons1: KLButtonObject = {
+      title: 'button1',
+      link: {
+        mobileWebURL: 'url that registered in the domain section in kakao developer console',
+      },
+    };
+
+    let feedButtons2: KLButtonObject = {
+      title: 'button2',
+      link: {
+        iosExecutionParams: 'param1=value1&param2=value2',
+        androidExecutionParams: 'param1=value1&param2=value2',
+      },
+    };
+
+    let feedContent: KLContentObject = {
+      title: 'title',
+      link: feedLink,
+      imageURL: 'http://mud-kage.kakao.co.kr/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png'
+    };
+
+
+    let feedTemplate: KLFeedTemplate = {
+      content: feedContent,
+      social: feedSocial,
+      buttons: [feedButtons1, feedButtons2]
+    };
+
+
+    this._kakaoCordovaSDK
+      .sendLinkFeed(feedTemplate)
+      .then(
+        res => {
+          console.log(res);
+          
+        },
+        err => {
+          console.log(err);
+        }
+      )
+      .catch(err => {
+        console.log(err);
+      });
+  }
+```
+
+### `sendLinkList(listTemplate: KLListTemplate)`
+Send a default list template to kakao talk
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+
+    let listHeaderLink: KLLinkObject = {
+      webURL: 'url that registered in the domain section in kakao developer console',
+      mobileWebURL: 'url that registered in the domain section in kakao developer console',
+    };
+
+    let listContent1: KLContentObject = {
+      title: '자전거 라이더를 위한 공간',
+      desc: '매거진',
+      link: listHeaderLink,
+      imageURL: 'http://mud-kage.kakao.co.kr/dn/QNvGY/btqfD0SKT9m/k4KUlb1m0dKPHxGV8WbIK1/openlink_640x640s.jpg'
+    };
+
+    let listContent2: KLContentObject = {
+      title: '비쥬얼이 끝내주는 오레오 카푸치노',
+      desc: '매거진',
+      link: listHeaderLink,
+      imageURL: 'http://mud-kage.kakao.co.kr/dn/boVWEm/btqfFGlOpJB/mKsq9z6U2Xpms3NztZgiD1/openlink_640x640s.jpg'
+    };
+
+    let listContent3: KLContentObject = {
+      title: '감성이 가득한 분위기',
+      desc: '매거진',
+      link: listHeaderLink,
+      imageURL: 'http://mud-kage.kakao.co.kr/dn/NTmhS/btqfEUdFAUf/FjKzkZsnoeE4o19klTOVI1/openlink_640x640s.jpg'
+    };
+
+    let listButtons1: KLButtonObject = {
+      title: 'button1',
+      link: {
+        mobileWebURL: 'https://www.naver.com',
+      },
+    };
+
+    let listButtons2: KLButtonObject = {
+      title: 'button2',
+      link: {
+        iosExecutionParams: 'param1=value1&param2=value2',
+        androidExecutionParams: 'param1=value1&param2=value2',
+      },
+    };
+
+    let listTemplate: KLListTemplate = {
+      headerTitle: 'List Template Test',
+      headerLink: listHeaderLink,
+      contents: [listContent1, listContent2, listContent3],
+      buttonTitle: '',
+      buttons: [listButtons1, listButtons2]
+    };
+
+    this._kakaoCordovaSDK
+    .sendLinkList(listTemplate)
+    .then(
+      res => {
+        console.log(res);
+        
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+
+### `sendLinkLocation(locationTemplate: KLLocationTemplate)`
+Send a default location template to kakao talk
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+
+    let locationContent: KLContentObject = {
+      title: '카카오 판교오피스',
+      desc: '카카오 판교오피스 위치입니다.',
+      link: {
+        mobileWebURL: 'url that registered in the domain section in kakao developer console'
+      },
+      imageURL: 'http://mud-kage.kakao.co.kr/dn/bSbH9w/btqgegaEDfW/vD9KKV0hEintg6bZT4v4WK/kakaolink40_original.png'
+    };
+
+    let locationSocial: KLSocialObject = {
+      likeCount: 50,
+      sharedCount: 1234
+    };
+
+    let locationTemplate: KLLocationTemplate = {
+      content: locationContent,
+      address: '성남시 분당구 판교역로 235',
+      addressTitle: '"카카오 판교오피스',
+      social: locationSocial,
+      buttonTitle: '웹으로 보자'
+    }
+
+    this._kakaoCordovaSDK
+    .sendLinkLocation(locationTemplate)
+    .then(
+      res => {
+        console.log(res);
+        
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+### `sendLinkCommerce(commerceTemplate: KLCommerceTemplate)`
+Send a default commerce template to kakao talk
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let commerceContent: KLContentObject = {
+      title: 'Ivory long dress (4 Color)',
+      link: {
+        mobileWebURL: 'url that registered in the domain section in kakao developer console'
+      },
+      imageURL: 'http://mud-kage.kakao.co.kr/dn/RY8ZN/btqgOGzITp3/uCM1x2xu7GNfr7NS9QvEs0/kakaolink40_original.png'
+    };
+
+    let commerceCommerce: KLCommerceObject = {
+      regularPrice: 208800,
+      discountPrice: 146160,
+      discountRate: 30
+    };
+
+    let commerceButtons1: KLButtonObject = {
+      title: '구매하기',
+      link: {
+        mobileWebURL: 'url that registered in the domain section in kakao developer console',
+      },
+    };
+
+    let commerceButtons2: KLButtonObject = {
+      title: '공유하기',
+      link: {
+        iosExecutionParams: 'param1=value1&param2=value2',
+        androidExecutionParams: 'param1=value1&param2=value2',
+      },
+    };
+
+    let commerceTemplate: KLCommerceTemplate = {
+      content: commerceContent,
+      commerce: commerceCommerce,
+      buttons: [commerceButtons1, commerceButtons2],
+      buttonTitle: '웹으로 보자'
+    }
+
+    this._kakaoCordovaSDK
+    .sendLinkCommerce(commerceTemplate)
+    .then(
+      res => {
+        console.log(res);
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+### `sendLinkText(textTemplate: KLTextTemplate)`
+Send a default text template to kakao talk
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let textLink: KLLinkObject = {
+      webURL: 'url that registered in the domain section in kakao developer console',
+      mobileWebURL: 'url that registered in the domain section in kakao developer console',
+    };
+    let textButtons1: KLButtonObject = {
+      title: 'button1',
+      link: {
+        mobileWebURL: 'url that registered in the domain section in kakao developer console',
+      },
+    };
+
+    let textButtons2: KLButtonObject = {
+      title: 'button2',
+      link: {
+        iosExecutionParams: 'param1=value1&param2=value2',
+        androidExecutionParams: 'param1=value1&param2=value2',
+      },
+    };
+
+    let textTemplate: KLTextTemplate = {
+      text: 'Text Template Test',
+      link: textLink,
+      buttonTitle: '',
+      buttons: [textButtons1, textButtons2]
+    };
+
+    this._kakaoCordovaSDK
+    .sendLinkText(textTemplate)
+    .then(
+      res => {
+        console.log(res);
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+### `sendLinkScrap(scrapTemplate: KLScrapTemplate)`
+Send a scrap template to kakao talk
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let scrapTemplate: KLScrapTemplate = {
+      url: 'url that registered in the domain section in kakao developer console'
+    };
+
+    this._kakaoCordovaSDK
+    .sendLinkScrap(scrapTemplate)
+    .then(
+      res => {
+        console.log(res);
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+### `sendLinkCustom(scrapTemplate: KLCustomTemplate)`
+Send a custom template to kakao talk.
+You need to make a template in the kakao developer console in order to get templateId.
+and if you would like to change title and description dynamically, 
+it is also required to put `${title}` and `${description}` as value in the template
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let scrapTemplate: KLCustomTemplate = {
+      templateId: 'your template id',
+      title: 'ddd',
+      description: 'fff'
+    };
+
+
+    this._kakaoCordovaSDK
+    .sendLinkCustom(scrapTemplate)
+    .then(
+      res => {
+        console.log(res);
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+### `uploadImage(uploadImageConfig: KLUploadImageConfig)`
+While Kakao doesn't allow you to upload image files themselves, Kakao supports to generate a new url, which saved in kakao server for 20 days, so that you could use in the templates as url values.
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let uploadImageConfig: KLUploadImageConfig = {
+      fileOrUrl: fileOrUrl?fileOrUrl:'file',
+      url: url?url:''
+    }
+    this._kakaoCordovaSDK
+    .uploadImage(uploadImageConfig)
+    .then(
+      res => {
+        console.log(res);
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+### `deleteUploadedImage(deleteImageConfig: KLDeleteImageConfig)`
+Delete the uploaded image from kakao server.
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let deleteImageConfig: KLDeleteImageConfig = {
+      url: 'uploadImageUrl',
+
+    }
+    this._kakaoCordovaSDK
+    .deleteUploadedImage(deleteImageConfig)
+    .then(
+      res => {
+        console.log(res);
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
+
+### `postStory(postStoryConfig: KLPostStoryConfig)`
+post contents on Kakao Story
+```
+  constructor(public _kakaoCordovaSDK: KakaoCordovaSDK) {
+    let postStoryUrlInfo: KLPostStoryUrlInfo = {
+      title: 'Sample',
+      desc: 'Sample 입니다.',
+      imageURLs: ['http://mud-kage.kakao.co.kr/dn/RY8ZN/btqgOGzITp3/uCM1x2xu7GNfr7NS9QvEs0/kakaolink40_original.png']
+      type: ScrapType.ScrapTypeVideo
+    }
+    let postStoryConfig: KLPostStoryConfig = {
+      post: 'Sample Story Posting https://www.youtube.com/watch?v=XUX1jtTKkKs',
+      appver: '1.0',
+      urlinfo: postStoryUrlInfo
+    }
+    this._kakaoCordovaSDK
+    .postStory(postStoryConfig)
+    .then(
+      res => {
+        console.log(res);
+      },
+      err => {
+        console.log(err);
+      }
+    )
+    .catch(err => {
+      console.log(err);
+    });
+  }
+```
