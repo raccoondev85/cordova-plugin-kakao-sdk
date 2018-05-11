@@ -4,10 +4,13 @@ Kakao Cordova SDK Plugin (카카오 코르도바 SDK 플러그인)
 Version is updated to 2.0.0
 
 All functions in KakaoLink SDK are included now.
+
 *Kakao Official Documents
+
 **Android:  
   - Login: https://developers.kakao.com/docs/android/user-management
   - Link: https://developers.kakao.com/docs/android/kakaotalk-link
+  
 **iOS:  
   - Login: https://developers.kakao.com/docs/ios/user-management
   - Link: https://developers.kakao.com/docs/ios/kakaotalk-link
