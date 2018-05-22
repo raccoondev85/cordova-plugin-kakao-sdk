@@ -78,16 +78,21 @@
             
             NSLog(@"%@", result);
             NSMutableDictionary *userSession =  [NSMutableDictionary new];
-            NSDictionary *userIdAndEmail = @{
-                                             @"accessToken": [KOSession sharedSession].accessToken,
-                                             @"id": result.ID,
-                                             @"email": result.email,
-                                             @"isVerifiedEmail": @(result.isVerifiedEmail)};
+            NSDictionary *userId = @{
+                                     @"accessToken": [KOSession sharedSession].accessToken,
+                                     @"id": result.ID};
+            
             NSDictionary *userProperties = result.properties;
             NSDictionary *userExtras = result.extras;
-            [userSession addEntriesFromDictionary: userIdAndEmail];
+            [userSession addEntriesFromDictionary: userId];
             [userSession addEntriesFromDictionary: userProperties];
             [userSession addEntriesFromDictionary: userExtras];
+            if(result.email != nil){
+                NSDictionary *userEmail = @{
+                                            @"email": result.email,
+                                            @"isVerifiedEmail": @(result.isVerifiedEmail)};
+                [userSession addEntriesFromDictionary: userEmail];
+            }
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:userSession];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         } else {
