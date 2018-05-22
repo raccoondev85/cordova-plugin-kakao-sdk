@@ -889,12 +889,14 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
             userinfo.put("accessToken", accessToken);
             userinfo.put("id", userProfile.getId());
-            userinfo.put("email", userProfile.getEmail());
-            userinfo.put("emailVerified", userProfile.getEmailVerified());
             userinfo.put("nickname", userProfile.getNickname());
-            userinfo.put("profileImagePath", userProfile.getProfileImagePath());
-            userinfo.put("thumbnailImagePath", userProfile.getThumbnailImagePath());
-
+            userinfo.put("profile_image", userProfile.getProfileImagePath());
+            userinfo.put("thumbnail_image", userProfile.getThumbnailImagePath());
+            if(userProfile.getEmail() != null){
+                userinfo.put("email", userProfile.getEmail());
+                userinfo.put("isVerifiedEmail", userProfile.getEmailVerified());
+            }
+            
             JSONObject prop = new JSONObject(userProfile.getProperties());
             JSONObject[] objs = new JSONObject[] { userinfo, prop };
             for (JSONObject obj : objs) {
