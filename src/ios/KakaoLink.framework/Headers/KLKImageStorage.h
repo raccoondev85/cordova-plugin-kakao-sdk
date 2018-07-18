@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/*!
+ @header KLKImageStorage.h
+ @abstract 이미지를 카카오 이미지 서버로 업로드 할 수 있는 기능을 제공합니다.
+ */
 #import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -149,25 +153,25 @@ typedef void(^KLKDeleteImageFailureHandler)(NSError *error);
 @property (readonly) NSURL *URL;
 
 /*!
- * @property URL
+ * @property contentType
  * @abstract 업로드 된 이미지의 Content-Type
  */
 @property (readonly) NSString *contentType;
 
 /*!
- * @property URL
+ * @property length
  * @abstract 업로드 된 이미지의 용량 (단위: 바이트)
  */
 @property (readonly) NSUInteger length;
 
 /*!
- * @property URL
+ * @property width
  * @abstract 업로드 된 이미지의 너비 (단위: 픽셀)
  */
 @property (readonly) NSUInteger width;
 
 /*!
- * @property URL
+ * @property height
  * @abstract 업로드 된 이미지의 높이 (단위: 픽셀)
  */
 @property (readonly) NSUInteger height;

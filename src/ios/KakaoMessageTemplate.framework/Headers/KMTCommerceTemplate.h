@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*!
+ * @header KMTCommerceTemplate.h
+ * @abstract 기본 템플릿으로 제공되는 커머스 템플릿 클래스.
+ */
+
 #import <KakaoMessageTemplate/KMTTemplate.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -24,9 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class KMTButtonObject;
 
 /*!
- @class KMTCommerceTemplate
- @abstract 기본 템플릿으로 제공되는 커머스 템플릿 클래스.
- @discussion 커머스 템플릿은 하나의 컨텐츠와 하나의 커머스 정보, 하나의 기본 버튼을 가집니다. 임의의 버튼을 최대 2개까지 설정할 수 있습니다.
+ * @class KMTCommerceTemplate
+ * @abstract 기본 템플릿으로 제공되는 커머스 템플릿 클래스.
+ * @discussion 커머스 템플릿은 하나의 컨텐츠와 하나의 커머스 정보, 하나의 기본 버튼을 가집니다. 임의의 버튼을 최대 2개까지 설정할 수 있습니다.
  */
 @interface KMTCommerceTemplate : KMTTemplate
 

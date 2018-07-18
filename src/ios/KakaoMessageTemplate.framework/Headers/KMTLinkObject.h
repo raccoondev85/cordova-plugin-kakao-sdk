@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/*!
+ * @header KMTLinkObject.h
+ * @abstract 메시지에서 컨텐츠 영역이나 버튼 클릭 시에 이동되는 링크 정보 오브젝트입니다.
  */
 
 #import <KakaoMessageTemplate/KMTParamObject.h>

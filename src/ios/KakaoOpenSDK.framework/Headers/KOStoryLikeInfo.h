@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Kakao Corp.
+ * Copyright 2015-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 /*!
  @header KOStoryLikeInfo.h
- 카카오스토리의 내스토리 좋아요 등 느낌(감정표현)에 대한 정보를 담고 있는 구조체.
+ @abstract 카카오스토리의 내스토리 좋아요 등 느낌(감정표현)에 대한 정보를 담고 있는 구조체.
  */
 
 #import <Foundation/Foundation.h>
@@ -33,16 +33,16 @@
  */
 typedef NS_ENUM(NSInteger, KOStoryEmotion) {
     KOStoryEmotionUnknown = 0,
-    KOStoryEmotionLike,
-    KOStoryEmotionCool,
-    KOStoryEmotionHappy,
-    KOStoryEmotionSad,
-    KOStoryEmotionCheerUp
+    KOStoryEmotionLike = 1,
+    KOStoryEmotionCool = 2,
+    KOStoryEmotionHappy = 3,
+    KOStoryEmotionSad = 4,
+    KOStoryEmotionCheerUp = 5
 };
 
 /*!
  @class KOStoryLikeInfo
- @discussion 카카오스토리의 좋아요 등 느낌(감정표현)에 대한 정보를 담고 있는 구조체.
+ @abstract 카카오스토리의 좋아요 등 느낌(감정표현)에 대한 정보를 담고 있는 구조체.
  */
 @interface KOStoryLikeInfo : NSObject
 

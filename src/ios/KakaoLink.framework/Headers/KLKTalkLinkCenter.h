@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/*!
+ @header KLKTalkLinkCenter.h
+ @abstract 카카오톡링크 API 관련 기능을 정의합니다.
+ */
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -69,11 +73,11 @@ typedef void(^KLKTalkLinkFailureHandler)(NSError *error);
  @method sendDefaultWithTemplate:success:failure:
  @abstract 기본 제공되는 템플릿을 이용하여 카카오톡 링크를 실행 함.
  @discussion KMTTemplate 클래스는 KakaoMessageTemplate.framework에 포함되어 있습니다. 이 메소드를 사용하기 위해서는 Build Phases > Link Binary With Libraries 설정에 KakaoMessageTemplate.framework를 추가해야 합니다.
- @param template 전송할 메시지 템플릿 오브젝트. KMTTemplate 클래스를 직접 생성해서 사용할 수 없고 원하는 템플릿에 맞는 적절한 하위 클래스로 오브젝트를 생성해야 함.
+ @param templateObj 전송할 메시지 템플릿 오브젝트. KMTTemplate 클래스를 직접 생성해서 사용할 수 없고 원하는 템플릿에 맞는 적절한 하위 클래스로 오브젝트를 생성해야 함.
  @param success 카카오톡링크 실행에 성공했을 때 호출되는 완료 핸들러.
  @param failure 카카오톡링크 실행 중 에러가 발생했을 때 호출되는 완료 핸들러.
  */
-- (void)sendDefaultWithTemplate:(KMTTemplate *)template
+- (void)sendDefaultWithTemplate:(KMTTemplate *)templateObj
                         success:(nullable KLKTalkLinkSuccessHandler)success
                         failure:(nullable KLKTalkLinkFailureHandler)failure;
 
@@ -89,7 +93,7 @@ typedef void(^KLKTalkLinkFailureHandler)(NSError *error);
                  failure:(nullable KLKTalkLinkFailureHandler)failure;
 
 /*!
- @method sendScrapWithURL:success:failure:
+ @method sendScrapWithURL:templateId:templateArgs:success:failure:
  @abstract 지정된 URL을 스크랩하여 카카오톡 링크를 실행 함.
  @param URL 스크랩할 URL. 개발자사이트 앱 설정에 등록된 도메인만 허용됨.
  @param templateId 전송할 메시지 템플릿 ID.

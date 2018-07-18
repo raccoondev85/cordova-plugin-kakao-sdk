@@ -36,12 +36,12 @@ typedef NS_ENUM(NSUInteger, KLKTalkLinkAction) {
 
 - (instancetype)initWithConfiguration:(KCMConfiguration *)configuration;
 
-- (NSURLRequest *)requestDefaultWithTemplate:(KMTTemplate *)template error:(NSError **)error;
+- (NSURLRequest *)requestDefaultWithTemplate:(KMTTemplate *)templateObj error:(NSError **)error;
 - (NSURLRequest *)requestScrapWithURL:(NSURL *)URL error:(NSError **)error;
 - (NSURLRequest *)requestScrapWithURL:(NSURL *)URL templateId:(NSString *)templateId templateArgs:(NSDictionary<NSString *,NSString *> *)templateArgs error:(NSError **)error;
 - (NSURLRequest *)requestCustomWithTemplateId:(NSString *)templateId templateArgs:(NSDictionary<NSString *,NSString *> *)templateArgs error:(NSError **)error;
 
-- (NSURL *)sharerURLWithTemplate:(KMTTemplate *)template error:(NSError **)error;
+- (NSURL *)sharerURLWithTemplate:(KMTTemplate *)templateObj error:(NSError **)error;
 - (NSURL *)sharerURLWithURL:(NSURL *)URL error:(NSError **)error;
 - (NSURL *)sharerURLWithURL:(NSURL *)URL templateId:(NSString *)templateId templateArgs:(NSDictionary<NSString *,NSString *> *)templateArgs error:(NSError **)error;
 - (NSURL *)sharerURLWithTemplateId:(NSString *)templateId templateArgs:(NSDictionary<NSString *,NSString *> *)templateArgs error:(NSError **)error;

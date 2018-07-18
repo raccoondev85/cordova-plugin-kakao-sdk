@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Kakao Corp.
+ * Copyright 2015-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,15 @@
 
 /*!
  @header KOStoryMyStoryImageInfo.h
- 카카오스토리의 내스토리 정보 중 이미지 내용을 담고 있는 구조체.
+ @abstract 카카오스토리의 내스토리 정보 중 이미지 내용을 담고 있는 구조체.
  */
 
 #import <Foundation/Foundation.h>
 
 /*!
  @class KOStoryMyStoryImageInfo
- @discussion 카카오스토리의 내스토리 정보 중 이미지 내용을 담고 있는 구조체.
+ @abstract 카카오스토리의 내스토리 정보 중 이미지 내용을 담고 있는 구조체.
  */
-
 @interface KOStoryMyStoryImageInfo : NSObject
 
 /*!

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Kakao Corp.
+ * Copyright 2015-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 /*!
  @header KOStoryMyStoryInfo.h
- 카카오스토리의 내스토리 정보를 담고 있는 구조체.
+ @abstract 카카오스토리의 내스토리 정보를 담고 있는 구조체.
  */
 
 #import <Foundation/Foundation.h>
@@ -30,9 +30,9 @@
  */
 typedef NS_ENUM(NSInteger, KOStoryMediaType) {
     KOStoryMediaTypeUnknown = 0,
-    KOStoryMediaTypeNotSupported,
-    KOStoryMediaTypeNote,
-    KOStoryMediaTypePhoto
+    KOStoryMediaTypeNotSupported = 1,
+    KOStoryMediaTypeNote = 2,
+    KOStoryMediaTypePhoto = 3
 };
 
 /*!
@@ -44,9 +44,9 @@ typedef NS_ENUM(NSInteger, KOStoryMediaType) {
  */
 typedef NS_ENUM(NSInteger, KOStoryPermission) {
     KOStoryPermissionUnknown = 0,
-    KOStoryPermissionPublic,
-    KOStoryPermissionFriend,
-    KOStoryPermissionOnlyMe
+    KOStoryPermissionPublic = 1,
+    KOStoryPermissionFriend = 2,
+    KOStoryPermissionOnlyMe = 3
 };
 
 @class KOStoryMyStoryImageInfo;
@@ -55,7 +55,7 @@ typedef NS_ENUM(NSInteger, KOStoryPermission) {
 
 /*!
  @class KOStoryMyStoryInfo
- @discussion 카카오스토리의 내스토리 정보를 담고 있는 구조체.
+ @abstract 카카오스토리의 내스토리 정보를 담고 있는 구조체.
  */
 
 @interface KOStoryMyStoryInfo : NSObject

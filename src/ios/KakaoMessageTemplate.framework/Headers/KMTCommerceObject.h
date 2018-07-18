@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/*!
+ * @header KMTCommerceObject.h
+ * @abstract 가격, 할인율 등 커머스 정보를 나타내는 오브젝트입니다.
  */
 
 #import <KakaoMessageTemplate/KMTParamObject.h>

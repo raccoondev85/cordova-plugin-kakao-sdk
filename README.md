@@ -1,7 +1,7 @@
 # cordova-plugin-kakao-sdk
 Kakao Cordova SDK Plugin (카카오 코르도바 SDK 플러그인)
 
-Version is updated to 2.0.0
+Version is updated to 2.1.0 (SDK version changed. => gender, birthday, age-range properties added)
 
 All functions in KakaoLink SDK are included now.
 
@@ -25,12 +25,12 @@ All functions in KakaoLink SDK are included now.
 |Cordova Platforms Android|6.4.0
 |Cordova Platforms IOS|4.5.4
 |Ionic Framework|ionic-angular 3.9.2
-|KakaoCommon.framework(ios)|1.7.0
-|KakaoLink.framework(ios)|1.7.0
-|KakaoMessageTemplate.framework(ios)|1.7.0
-|KakaoOpenSDK.framework(ios)|1.7.0
-|com.kakao.sdk:kakaotalk(android)|1.10.1
-|com.kakao.sdk:kakaolink(android)|1.10.1
+|KakaoCommon.framework(ios)|1.9.0
+|KakaoLink.framework(ios)|1.9.0
+|KakaoMessageTemplate.framework(ios)|1.9.0
+|KakaoOpenSDK.framework(ios)|1.9.0
+|com.kakao.sdk:kakaotalk(android)|1.12.0
+|com.kakao.sdk:kakaolink(android)|1.12.0
 
 
 ## How to install

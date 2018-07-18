@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/*!
+ * @header KMTContentObject.h
+ * @abstract 컨텐츠의 내용을 담고 있는 오브젝트입니다. 기본 템플릿에서는 모든 메시지에 하나 이상의 컨텐츠를 가지고 있습니다.
  */
 
 #import <KakaoMessageTemplate/KMTParamObject.h>

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Kakao Corp.
+ * Copyright 2015-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/*!
- */
+DEPRECATED_MSG_ATTRIBUTE("이 클래스는 v1 user/me용 클래스입니다. v2가 적용된 KOSessionTask.userMeTask 메소드와 KOUserMe 클래스를 사용해주세요.")
 @interface KOUser : KOUserInfo
 
 @property(nonatomic, readonly, nullable) NSString *email;
 @property(nonatomic, readonly, getter=isVerifiedEmail) BOOL verifiedEmail;
 @property(nonatomic, readonly, nullable) NSDictionary *properties;
 
-/*!
- @abstract 사용자에 대한 정보를 얻는다.
- @param key 추출하고자 하는 사용자정보의 key값.
- */
 - (id)propertyForKey:(NSString *)key;
 
 + (instancetype)responseWithDictionary:(NSDictionary *)dictionary;
@@ -44,10 +39,10 @@ NS_ASSUME_NONNULL_BEGIN
 /*!
  프로퍼티 키 이름
  */
-extern NSString *const KOUserEmailPropertyKey;
-extern NSString *const KOUserIsVerifiedEmailPropertyKey;
-extern NSString *const KOUserNicknamePropertyKey;
-extern NSString *const KOUserProfileImagePropertyKey;
-extern NSString *const KOUserThumbnailImagePropertyKey;
+extern NSString *const KOUserNicknamePropertyKey DEPRECATED_ATTRIBUTE;
+extern NSString *const KOUserProfileImagePropertyKey DEPRECATED_ATTRIBUTE;
+extern NSString *const KOUserThumbnailImagePropertyKey DEPRECATED_ATTRIBUTE;
+extern NSString *const KOUserEmailPropertyKey DEPRECATED_ATTRIBUTE;
+extern NSString *const KOUserIsVerifiedEmailPropertyKey DEPRECATED_ATTRIBUTE;
 
 NS_ASSUME_NONNULL_END

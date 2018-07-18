@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*!
+ * @header KMTTextTemplate.h
+ * @abstract 텍스트형 기본 템플릿 클래스.
+ */
+
 #import <KakaoMessageTemplate/KMTTemplate.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -22,8 +27,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class KMTButtonObject;
 
 /*!
- @class KMTTextTemplate
- @abstract 텍스트형 기본 템플릿 클래스.
+ * @class KMTTextTemplate
+ * @abstract 텍스트형 기본 템플릿 클래스.
  */
 @interface KMTTextTemplate : KMTTemplate
 

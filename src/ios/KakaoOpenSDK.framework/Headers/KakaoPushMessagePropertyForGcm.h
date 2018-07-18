@@ -34,12 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSString *collapse;
 
 /*!
- @property delayWhileIdle
- @abstract false(NO)일 경우, 사용자 기기의 idle 상태 상관없이 즉시 푸시 알림 전송. 반대로 true(YES)로 하면 GCM 서버 상태에 따라 어느 정도 시간이 지난 후 푸시 알림이 전송됨
- */
-@property(nonatomic, assign) BOOL delayWhileIdle DEPRECATED_MSG_ATTRIBUTE("The value of this property will be ignored.");
-
-/*!
  @property timeToLive
  @abstract GCM에 저장될 미전송메시지 보관주기 (단위:초), 0 또는 음수를 입력할 경우 무시됨, 기본값 4주
  */
@@ -81,6 +75,10 @@ NS_ASSUME_NONNULL_BEGIN
            customField:(nullable NSDictionary *)customField;
 
 - (NSDictionary *)asDictionary;
+
+
+
+@property(nonatomic, assign) BOOL delayWhileIdle DEPRECATED_MSG_ATTRIBUTE("The value of this property will be ignored.");
 
 @end
 

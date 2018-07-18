@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*!
+ * @header KMTFeedTemplate.h
+ * @abstract 기본 템플릿으로 제공되는 피드 템플릿 클래스.
+ */
+
 #import <KakaoMessageTemplate/KMTTemplate.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -24,9 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class KMTButtonObject;
 
 /*!
- @class KMTFeedTemplate
- @abstract 기본 템플릿으로 제공되는 피드 템플릿 클래스.
- @discussion 피드 템플릿은 하나의 컨텐츠와 하나의 기본 버튼을 가집니다. 소셜 정보를 추가할 수 있으며 임의의 버튼을 설정할 수도 있습니다.
+ * @class KMTFeedTemplate
+ * @abstract 기본 템플릿으로 제공되는 피드 템플릿 클래스.
+ * @discussion 피드 템플릿은 하나의 컨텐츠와 하나의 기본 버튼을 가집니다. 소셜 정보를 추가할 수 있으며 임의의 버튼을 설정할 수도 있습니다.
  */
 @interface KMTFeedTemplate : KMTTemplate
 

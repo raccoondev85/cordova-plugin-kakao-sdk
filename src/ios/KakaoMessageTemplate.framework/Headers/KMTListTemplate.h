@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*!
+ * @header KMTListTemplate.h
+ * @abstract 여러 개의 컨텐츠를 리스트 형태로 보여줄 수 있는 메시지 템플릿입니다.
+ */
+
 #import <KakaoMessageTemplate/KMTTemplate.h>
 
 NS_ASSUME_NONNULL_BEGIN

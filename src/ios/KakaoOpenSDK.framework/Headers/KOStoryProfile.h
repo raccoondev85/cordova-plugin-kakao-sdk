@@ -16,7 +16,7 @@
 
 /*!
  @header KOStoryProfile.h
- 카카오스토리 사용자 정보를 담고 있는 구조체.
+ @abstract 카카오스토리 사용자 정보를 담고 있는 구조체.
  */
 #import <Foundation/Foundation.h>
 
@@ -27,12 +27,12 @@
  */
 typedef NS_ENUM(NSInteger, KOStoryProfileBirthdayType) {
     KOStoryProfileBirthdayTypeSolar = 0,
-    KOStoryProfileBirthdayTypeLunar
+    KOStoryProfileBirthdayTypeLunar = 1
 };
 
 /*!
  @class KOStoryProfile
- @discussion 카카오스토리 사용자 정보를 담고 있는 구조체.
+ @abstract 카카오스토리 사용자 정보를 담고 있는 구조체.
  */
 @interface KOStoryProfile : NSObject
 

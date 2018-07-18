@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kakao Corp.
+ * Copyright 2017-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
  */
 
 #import <Foundation/Foundation.h>
+
+//! Project version number for KakaoCommon.
+FOUNDATION_EXPORT double KakaoCommonVersionNumber;
+
+//! Project version string for KakaoCommon.
+FOUNDATION_EXPORT const unsigned char KakaoCommonVersionString[];
 
 #import <KakaoCommon/KCMConfiguration.h>
 #import <KakaoCommon/KCMAgent.h>

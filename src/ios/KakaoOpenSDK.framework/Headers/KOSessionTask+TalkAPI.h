@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Kakao Corp.
+ * Copyright 2015-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*!
+ @header KOSessionTask+TalkAPI.h
+ @abstract 인증된 session 정보를 바탕으로 각종 카카오톡 API를 호출할 수 있습니다.
+ */
+
 #import "KOSessionTask.h"
 #import "KOTalkProfile.h"
 #import "KOChatContext.h"
@@ -22,18 +27,11 @@
 #import "KOChat.h"
 #import "KOFriend.h"
 
-/*!
- @header KOSessionTask+TalkAPI.h
- 인증된 session 정보를 바탕으로 각종 카카오톡 API를 호출할 수 있습니다.
- */
-
-/*!
- @abstract KOTalkMessageReceiverType (Deprecated)
- */
+DEPRECATED_ATTRIBUTE
 typedef NS_ENUM(NSInteger, KOTalkMessageReceiverType) {
     KOTalkMessageReceiverTypeUser = 0,
-    KOTalkMessageReceiverTypeFriend,
-    KOTalkMessageReceiverTypeChat
+    KOTalkMessageReceiverTypeFriend = 1,
+    KOTalkMessageReceiverTypeChat = 2
 };
 
 /*!
@@ -43,9 +41,9 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverType) {
  @constant KOTalkMessageReceiverIDTypeChat 메시지 수신 대상 채팅방 ID. KOChat.ID
  */
 typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
-    KOTalkMessageReceiverIDTypeUser,
-    KOTalkMessageReceiverIDTypeChat,
-    KOTalkMessageReceiverIDTypeUUID,
+    KOTalkMessageReceiverIDTypeUser = 1,
+    KOTalkMessageReceiverIDTypeChat = 2,
+    KOTalkMessageReceiverIDTypeUUID = 3,
 };
 
 @class KMTTemplate;
@@ -60,12 +58,12 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
 /*!
  @abstract 기본 제공되는 템플릿을 이용하여, 카카오톡으로 메시지를 전송합니다. 제휴를 통해 권한이 부여된 특정 앱에서만 호출 가능합니다.
  @discussion KMTTemplate 클래스는 KakaoMessageTemplate.framework에 포함되어 있습니다. 이 메소드를 사용하기 위해서는 Build Phases > Link Binary With Libraries 설정에 KakaoMessageTemplate.framework를 추가해야 합니다.
- @param template 전송할 메시지 템플릿 오브젝트. KMTTemplate 클래스를 직접 생성해서 사용할 수 없고 원하는 템플릿에 맞는 적절한 하위 클래스로 오브젝트를 생성해야 함.
+ @param templateObj 전송할 메시지 템플릿 오브젝트. KMTTemplate 클래스를 직접 생성해서 사용할 수 없고 원하는 템플릿에 맞는 적절한 하위 클래스로 오브젝트를 생성해야 함.
  @param receiverType 메시지 수신 대상 ID의 타입.
  @param receiverId 메시지를 수신할 대상(채팅방 또는 사용자)의 ID.
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
-+ (instancetype)talkMessageSendTaskWithTemplate:(KMTTemplate *)template
++ (instancetype)talkMessageSendTaskWithTemplate:(KMTTemplate *)templateObj
                                    receiverType:(KOTalkMessageReceiverIDType)receiverType
                                      receiverId:(id)receiverId
                               completionHandler:(void (^)(NSError *error))completionHandler;
@@ -119,10 +117,10 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
 /*!
  @abstract 기본 제공되는 템플릿을 이용하여, 카카오톡의 "나와의 채팅방"으로 메시지를 전송합니다. 모든 앱에서 호출 가능합니다.
  @discussion KMTTemplate 클래스는 KakaoMessageTemplate.framework에 포함되어 있습니다. 이 메소드를 사용하기 위해서는 Build Phases > Link Binary With Libraries 설정에 KakaoMessageTemplate.framework를 추가해야 합니다.
- @param template 전송할 메시지 템플릿 오브젝트. KMTTemplate 클래스를 직접 생성해서 사용할 수 없고 원하는 템플릿에 맞는 적절한 하위 클래스로 오브젝트를 생성해야 함.
+ @param templateObj 전송할 메시지 템플릿 오브젝트. KMTTemplate 클래스를 직접 생성해서 사용할 수 없고 원하는 템플릿에 맞는 적절한 하위 클래스로 오브젝트를 생성해야 함.
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
-+ (instancetype)talkMemoSendTaskWithTemplate:(KMTTemplate *)template
++ (instancetype)talkMemoSendTaskWithTemplate:(KMTTemplate *)templateObj
                            completionHandler:(void (^)(NSError *error))completionHandler;
 
 /*!

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Kakao Corp.
+ * Copyright 2015-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 #import <UIKit/UIKit.h>
 #import "KOHTTPMethod.h"
 
-/*
+/*!
+ @typedef KOSessionTaskCompletionHandler
  @abstract 각종 API 요청 완료시 호출되는 콜백 핸들러
  @param result 해당 API 요청의 결과
  @param error 호출 실패시의 오류 정보
@@ -107,7 +108,7 @@ completionHandler:(KOSessionTaskCompletionHandler)completionHandler;
 
 /*
  @abstract API 요청시의 타임아웃을 설정
- @param timeoutInterval second단위의 타임아웃 값(NSTimeInterval). 기본 180초(3분).
+ @param timeoutInterval second단위의 타임아웃 값(NSTimeInterval). 기본 30초.
  */
 + (void)setRequestTimeoutInterval:(NSTimeInterval)timeoutInterval;
 + (NSTimeInterval)requestTimeoutInterval;

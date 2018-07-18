@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Kakao Corp.
+ * Copyright 2015-2018 Kakao Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*!
+ @header KOSessionTask+StoryAPI.h
+ @abstract 인증된 session 정보를 바탕으로 각종 카카오스토리 API를 호출할 수 있습니다.
+ */
+
 #import "KOSessionTask.h"
 #import "KOStoryProfile.h"
 #import "KOStoryPostInfo.h"
@@ -24,11 +29,6 @@
 #import "KOStoryCommentInfo.h"
 
 /*!
- @header KOSessionTask+StoryAPI.h
- 인증된 session 정보를 바탕으로 각종 카카오스토리 API를 호출할 수 있습니다.
- */
-
-/*!
  @abstract KOStoryPostPermission 스토리 포스팅 공개 범위
  @constant KOStoryPostPermissionPublic 전체공개
  @constant KOStoryPostPermissionFriend 친구공개
@@ -36,8 +36,8 @@
  */
 typedef NS_ENUM(NSInteger, KOStoryPostPermission) {
     KOStoryPostPermissionPublic = 0,
-    KOStoryPostPermissionFriend,
-    KOStoryPostPermissionOnlyMe
+    KOStoryPostPermissionFriend = 1,
+    KOStoryPostPermissionOnlyMe = 2
 };
 
 /*!
