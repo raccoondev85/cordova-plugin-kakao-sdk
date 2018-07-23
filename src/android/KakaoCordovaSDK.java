@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -23,7 +22,6 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.kakao.auth.ApiResponseCallback;
 import com.kakao.kakaolink.internal.KakaoTalkLinkProtocol;
 import com.kakao.kakaolink.v2.KakaoLinkService;
 import com.kakao.kakaolink.v2.KakaoLinkResponse;
@@ -42,15 +40,11 @@ import com.kakao.network.storage.ImageDeleteResponse;
 import com.kakao.network.storage.ImageUploadResponse;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
-import com.kakao.usermgmt.callback.MeResponseCallback;
 import com.kakao.usermgmt.callback.MeV2ResponseCallback;
 import com.kakao.usermgmt.callback.UnLinkResponseCallback;
 import com.kakao.usermgmt.response.MeV2Response;
-import com.kakao.usermgmt.response.model.UserProfile;
-import com.kakao.util.KakaoParameterException;
 import com.kakao.util.exception.KakaoException;
 import com.kakao.util.helper.MediaUtils;
-import com.raccoondev85.plugin.kakao.KakaoResources;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -61,13 +55,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -77,7 +68,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
     private static final String LOG_TAG = "KakaoCordovaSDK";
     private static volatile Activity currentActivity;
-    private SessionCallback sesstionCallback;
+    private SessionCallback sessionCallback;
     private KakaoMeV2ResponseCallback kakaoMeV2ResponseCallback;
     private KakaoLinkResponseCallback kakaoLinkResponseCallback;
     private KakaoLinkImageUploadResponseCallback kakaoLinkImageUploadResponseCallback;
@@ -104,30 +95,33 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             throws JSONException {
         Log.v(LOG_TAG, "kakao : execute " + action);
         cordova.setActivityResultCallback(this);
+        removeSessionCallback();
 
         if (action.equals("login")) {
-            sesstionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sesstionCallback);
-            this.login(callbackContext, options);
+            sessionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sessionCallback);
+            if(!Session.getCurrentSession().checkAndImplicitOpen()){
+                this.login(callbackContext, options);
+            }
             return true;
         } else if (action.equals("logout")) {
-            sesstionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sesstionCallback);
+            sessionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sessionCallback);
             this.logout(callbackContext);
             return true;
         } else if (action.equals("unlinkApp")) {
-            sesstionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sesstionCallback);
+            sessionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sessionCallback);
             this.unlinkApp(callbackContext);
             return true;
         } else if (action.equals("getAccessToken")) {
-            sesstionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sesstionCallback);
+            sessionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sessionCallback);
             this.getAccessToken(callbackContext);
             return true;
         } else if (action.equals("requestMe")) {
-            sesstionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sesstionCallback);
+            sessionCallback = new SessionCallback(callbackContext);
+            Session.getCurrentSession().addCallback(sessionCallback);
             this.requestMe(callbackContext);
             return true;
         } else if (action.equals("sendLinkFeed")) {
@@ -173,19 +167,28 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         return false;
     }
 
-    private void login(final CallbackContext callbackContext, JSONArray options) {
+
+    private void removeSessionCallback(){
+        if(sessionCallback == null){
+            return;
+        }
+        Session.getCurrentSession().removeCallback(sessionCallback);
+    }
+
+    private void login(final CallbackContext callbackContext, final JSONArray options) {
         try {
             final JSONObject parameters = options.getJSONObject(0);
             if (parameters.has("authTypes")) {
                 JSONArray authTypes = new JSONArray(parameters.getString("authTypes"));
                 setCustomAuthTypes(authTypes);
             }
+            onClickLoginButton(getAuthTypes());
         } catch (Exception e) {
             e.printStackTrace();
             KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
-        } finally {
-            onClickLoginButton(getAuthTypes());
         }
+
+
     }
 
     private void requestMe(final CallbackContext callbackContext) {
@@ -238,9 +241,15 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         });
     }
 
-    private void getAccessToken(CallbackContext callbackContext) {
-        String accessToken = Session.getCurrentSession().getTokenInfo().getAccessToken();
-        callbackContext.success(accessToken);
+    private void getAccessToken(final CallbackContext callbackContext) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                String accessToken = Session.getCurrentSession().getTokenInfo().getAccessToken();
+                callbackContext.success(accessToken);
+            }
+        });
+
     }
 
     private void sendLinkFeed(CallbackContext callbackContext, JSONArray options) {
@@ -1011,11 +1020,14 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onFailure(ErrorResult errorResult) {
+            Log.e("onSessionClosed",errorResult.toString());
+
             KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
         }
 
         @Override
         public void onSessionClosed(ErrorResult errorResult) {
+            Log.e("onSessionClosed",errorResult.toString());
             KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
             Session.getCurrentSession().checkAndImplicitOpen();
         }
@@ -1049,8 +1061,14 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onSessionOpenFailed(KakaoException exception) {
+
             if (exception != null) {
-                KakaoCordovaErrorHandler.errorHandler(callbackContext, exception.toString());
+                if(exception.toString().contains("App restarted during Kakao login procedure. Restarting from the start.")){
+
+                }else{
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, exception.toString());
+                }
+
             }
         }
     }
@@ -1198,7 +1216,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
     /**
      * 가능한 AuhType들이 담겨 있는 리스트를 인자로 받아 로그인 어댑터의 data source로 사용될 Item array를 반환한다.
-     * 
+     *
      * @param authTypes 가능한 AuthType들을 담고 있는 리스트
      * @return 실제로 로그인 방법 리스트에 사용될 Item array
      */
@@ -1254,7 +1272,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
     /**
      * 실제로 유저에게 보여질 dialog 객체를 생성한다.
-     * 
+     *
      * @param authItems 가능한 AuthType들의 정보를 담고 있는 Item array
      * @param adapter   Dialog의 list view에 쓰일 adapter
      * @return 로그인 방법들을 팝업으로 보여줄 dialog
