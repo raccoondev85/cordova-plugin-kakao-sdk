@@ -6,7 +6,7 @@ var KakaoCordovaSDK = {
 		
 		if(typeof loginOptions === 'function'){
 			loginOptions = {
-        authTypes=[]
+        'authTypes':[]
       };
 		}
     exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'login', [loginOptions]);
