@@ -36,7 +36,7 @@
     if(authTypes == nil || [authTypes count] < 1){
         authTypes = [defaultAuthTypes copy];
         NSLog(@"%@", authTypes);
-    } else if([authTypes count] > 1) {
+    } else if([authTypes count] >= 1) {
         NSMutableArray* tmpAuthTypes = [[NSMutableArray alloc] init];
         for (NSNumber* element in authTypes) {
             NSLog(@"%@", element);
