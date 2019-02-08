@@ -1,0 +1,6 @@
+framework module KakaoS2 {
+  umbrella header "KakaoS2.h"
+
+  export *
+  module * { export * }
+}

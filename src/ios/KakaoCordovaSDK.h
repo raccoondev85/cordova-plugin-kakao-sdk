@@ -3,6 +3,8 @@
 #import <KakaoOpenSDK/KakaoOpenSDK.h>
 #import <KakaoLink/KakaoLink.h>
 #import <KakaoMessageTemplate/KakaoMessageTemplate.h>
+#import <KakaoS2/KakaoS2.h>
+#import <KakaoPlusFriend/KakaoPlusFriend.h>
 #import "KakaoCordovaStoryLinkHelper.h"
 
 @interface KakaoCordovaSDK : CDVPlugin <UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIScrollViewDelegate>
@@ -15,6 +17,13 @@ typedef NS_ENUM(NSInteger, MyAuthType) {
 - (void) login:(CDVInvokedUrlCommand*)command;
 - (void) logout:(CDVInvokedUrlCommand*)command;
 - (void) getAccessToken:(CDVInvokedUrlCommand*)command;
+- (void) requestMe:(CDVInvokedUrlCommand*)command;
+- (void) updateScopes:(CDVInvokedUrlCommand*)command;
+- (void) checkScopeStatus:(CDVInvokedUrlCommand*)command;
+- (void) requestSendMemo:(CDVInvokedUrlCommand*)command;
+- (void) addPlusFriend:(CDVInvokedUrlCommand*)command;
+- (void) chatPlusFriend:(CDVInvokedUrlCommand*)command;
+- (void) chatPlusFriendUrl:(CDVInvokedUrlCommand*)command;
 - (void) sendLinkFeed:(CDVInvokedUrlCommand*)command;
 - (void) sendLinkList:(CDVInvokedUrlCommand*)command;
 - (void) sendLinkLocation:(CDVInvokedUrlCommand*)command;

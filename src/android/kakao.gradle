@@ -4,11 +4,13 @@ repositories {
 }
 
 dependencies {
-	compile('com.kakao.sdk:kakaotalk:1.12.0@aar') {
+	compile('com.kakao.sdk:kakaotalk:1.16.0@aar') {
 		transitive = true
 	}
-	compile('com.kakao.sdk:kakaolink:1.12.0@aar') {
+	compile('com.kakao.sdk:kakaolink:1.16.0@aar') {
 		transitive = true
 	}
-	
+	compile('com.kakao.sdk:plusfriend:1.16.0@aar') {
+		transitive = true
+	}
 }

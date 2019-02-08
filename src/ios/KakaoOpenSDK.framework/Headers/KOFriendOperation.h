@@ -40,6 +40,7 @@ extern NSString* convertriendOperationTypeString(KOFriendOperationType type);
  @class KOFriendOperation
  @abstract 연산된 친구 목록 페이징의 정보를 처리하기 위한 Context.
  */
+DEPRECATED_ATTRIBUTE
 @interface KOFriendOperation : KOBaseContext
 
 /*!

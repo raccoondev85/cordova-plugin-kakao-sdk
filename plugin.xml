@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
    id="cordova-plugin-kakao-sdk"
    name="cordova-plugin-kakao-sdk"
-   version="2.1.2">
+   version="3.0.0">
 
     <name>KakaoCordovaSDK</name>
     <description>Kakao Cordova SDK Plugin</description>
@@ -31,6 +31,7 @@
         </config-file>
         
         <source-file src="src/android/res/values/kakao_strings.xml" target-dir="res/values" />
+        <source-file src="src/android/res/values-ko/kakao_strings.xml" target-dir="res/values-ko" />
         <config-file target="res/values/kakao_strings.xml" parent="/*">
             <string name="kakao_app_key">$KAKAO_APP_KEY</string>
             <string name="kakao_scheme">kakao$KAKAO_APP_KEY</string>
@@ -62,14 +63,14 @@
         <source-file src="src/android/KakaoResources.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/KakaoStoryLink.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/KakaoCordovaErrorHandler.java" target-dir="src/com/raccoondev85/plugin/kakao" />
-        <source-file src="src/android/res/values/styles.xml" target-dir="res/values" />
-        <source-file src="src/android/res/drawable/account.png" target-dir="res/drawable" />
-        <source-file src="src/android/res/drawable/btn_x.png" target-dir="res/drawable" />
-        <source-file src="src/android/res/drawable/story.png" target-dir="res/drawable" />
-        <source-file src="src/android/res/drawable/talk.png" target-dir="res/drawable" />
-        <source-file src="src/android/res/drawable/selector_login_button.xml" target-dir="res/drawable" />
-        <source-file src="src/android/res/layout/layout_login_dialog.xml" target-dir="res/layout" />
-        <source-file src="src/android/res/layout/layout_login_item.xml" target-dir="res/layout" />
+        <resource-file src="src/android/res/values/styles.xml" target="res/values" />
+        <resource-file src="src/android/res/drawable/account.png" target="res/drawable" />
+        <resource-file src="src/android/res/drawable/btn_x.png" target="res/drawable" />
+        <resource-file src="src/android/res/drawable/story.png" target="res/drawable" />
+        <resource-file src="src/android/res/drawable/talk.png" target="res/drawable" />
+        <resource-file src="src/android/res/drawable/selector_login_button.xml" target="res/drawable" />
+        <resource-file src="src/android/res/layout/layout_login_dialog.xml" target="res/layout" />
+        <resource-file src="src/android/res/layout/layout_login_item.xml" target="res/layout" />
 
     </platform>
     
@@ -110,6 +111,8 @@
         <framework src="src/ios/KakaoLink.framework" custom="true" />
         <framework src="src/ios/KakaoMessageTemplate.framework" custom="true" />
         <framework src="src/ios/KakaoOpenSDK.framework" custom="true" />
+        <framework src="src/ios/KakaoPlusFriend.framework" custom="true" />
+        <framework src="src/ios/KakaoS2.framework" custom="true" />
 
         <source-file src="src/ios/KakaoCordovaSDK.m" />
         <header-file src="src/ios/KakaoCordovaSDK.h" />

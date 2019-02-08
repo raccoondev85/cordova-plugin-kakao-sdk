@@ -4,7 +4,7 @@ var AuthConstant = require('./AuthConstant');
 var KakaoCordovaSDK = {
   login: function(loginOptions, successCallback, errorCallback) {
 		
-		if(typeof loginOptions === 'function'){
+		if(loginOptions == null || !loginOptions.authTypes){
 			loginOptions = {
         'authTypes':[]
       };
@@ -26,6 +26,49 @@ var KakaoCordovaSDK = {
 
   requestMe: function(successCallback, errorCallback) {
     exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'requestMe', []);
+  },
+
+  updateScopes: function(targetScopes, successCallback, errorCallback) {
+		
+		if(targetScopes == null || !targetScopes.targetScopes){
+			targetScopes = {
+        'targetScopes':[]
+      };
+		}
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'updateScopes', [targetScopes]);
+  },
+  
+  checkScopeStatus: function(targetScopes, successCallback, errorCallback) {
+		
+		if(targetScopes == null || !targetScopes.targetScopes){
+			targetScopes = {
+        'targetScopes':[]
+      };
+		}
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'checkScopeStatus', [targetScopes]);
+  },
+
+  requestSendMemo: function(builder, successCallback, errorCallback) {
+
+		if(builder == null || !builder.templateId){
+			builder = {
+        'arguments':[],
+        'templateId':''
+      };
+		}
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'requestSendMemo', [builder]);
+  },
+
+  addPlusFriend: function(params, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'addPlusFriend', [params]);
+  },
+
+  chatPlusFriend: function(params, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'chatPlusFriend', [params]);
+  },
+
+  chatPlusFriendUrl: function(params, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'KakaoCordovaSDK', 'chatPlusFriendUrl', [params]);
   },
 
   sendLinkFeed: function(template, successCallback, errorCallback) {

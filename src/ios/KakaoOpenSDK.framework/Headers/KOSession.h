@@ -185,7 +185,6 @@ typedef NS_ENUM(NSInteger, KOAgeAuthProperty) {
 /*!
  @abstract 현재 session 정보
  */
-
 + (KOSession *)sharedSession;
 
 /*!
@@ -249,6 +248,15 @@ typedef NS_ENUM(NSInteger, KOAgeAuthProperty) {
 - (void)openWithCompletionHandler:(KOSessionCompletionHandler)completionHandler authTypes:(NSArray<NSNumber *> *)authTypes;
 
 /*!
+ 이전에 발급 받았던 토큰을 재사용하여 로그인을 시도한다.
+ @param token 로그인 시도할 토큰. 갱신 가능한 토큰이면 로그인에 성공한다.
+ @param completionHandler 요청 완료시 실행될 block. 오류 처리와 로그인 완료 작업을 수행한다.
+ */
+- (void)openWithToken:(KOToken *)token completionHandler:(KOSessionCompletionHandler)completionHandler;
+
+
+
+/*!
  @method updateScopes:completionHandler:
  @abstract 현재 로그인된 사용자에게 새로운 scope이 필요할 경우 지정된 동의항목에 대한 동의창을 노출하고 사용자 동의를 유도합니다. 사용자가 동의 버튼을 누르면 해당 scope이 적용된 새로운 토큰으로 세션을 갱신합니다.
  @param scopes 요청할 scope 목록
@@ -257,13 +265,13 @@ typedef NS_ENUM(NSInteger, KOAgeAuthProperty) {
 - (void)updateScopes:(NSArray<NSString *> *)scopes completionHandler:(KOSessionCompletionHandler)completionHandler;
 
 /*!
- 현재 기기에서만 로그아웃한다.
+ 현재 기기에서만 로그아웃한다. 발급 받았던 토큰은 만료된다.
  @param completionHandler 요청 완료시 실행될 block.
  */
 - (void)logoutAndCloseWithCompletionHandler:(KOCompletionSuccessHandler)completionHandler;
 
 /*!
- 인증 토큰을 제거하여 session을 무효화한다.
+ 인증 토큰을 세션 객체에서 제거한다.
  */
 - (void)close;
 

@@ -22,9 +22,13 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.kakao.auth.AccessTokenCallback;
+import com.kakao.auth.authorization.accesstoken.AccessToken;
 import com.kakao.kakaolink.internal.KakaoTalkLinkProtocol;
 import com.kakao.kakaolink.v2.KakaoLinkService;
 import com.kakao.kakaolink.v2.KakaoLinkResponse;
+import com.kakao.kakaotalk.callback.TalkResponseCallback;
+import com.kakao.kakaotalk.v2.KakaoTalkService;
 import com.kakao.message.template.*;
 import com.kakao.network.callback.*;
 import com.kakao.auth.ApprovalType;
@@ -38,6 +42,7 @@ import com.kakao.auth.Session;
 import com.kakao.network.ErrorResult;
 import com.kakao.network.storage.ImageDeleteResponse;
 import com.kakao.network.storage.ImageUploadResponse;
+import com.kakao.plusfriend.PlusFriendService;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
 import com.kakao.usermgmt.callback.MeV2ResponseCallback;
@@ -58,7 +63,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -68,15 +75,15 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
     private static final String LOG_TAG = "KakaoCordovaSDK";
     private static volatile Activity currentActivity;
-    private SessionCallback sessionCallback;
     private KakaoMeV2ResponseCallback kakaoMeV2ResponseCallback;
     private KakaoLinkResponseCallback kakaoLinkResponseCallback;
     private KakaoLinkImageUploadResponseCallback kakaoLinkImageUploadResponseCallback;
     private KakaoLinkImageDeleteResponseCallback kakaoLinkImageDeleteResponseCallback;
     private static AuthType[] customAuthTypes;
     private static final int GALLERY_REQUEST_CODE = 9238;
-    private String[] STORAGE_PERMISSIONS = { Manifest.permission.READ_EXTERNAL_STORAGE };
+    private String[] STORAGE_PERMISSIONS = {Manifest.permission.READ_EXTERNAL_STORAGE};
     private final int REQUEST_EXTERNAL_STORAGE = 1;
+    private final String emptyString = "";
 
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         Log.v(LOG_TAG, "kakao : initialize");
@@ -91,38 +98,45 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
     }
 
-    public boolean execute(final String action, JSONArray options, final CallbackContext callbackContext)
+    public boolean execute(final String action, final JSONArray options, final CallbackContext callbackContext)
             throws JSONException {
         Log.v(LOG_TAG, "kakao : execute " + action);
         cordova.setActivityResultCallback(this);
         removeSessionCallback();
 
+
         if (action.equals("login")) {
-            sessionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sessionCallback);
-            if(!Session.getCurrentSession().checkAndImplicitOpen()){
-                this.login(callbackContext, options);
-            }
+            this.login(callbackContext, options);
             return true;
         } else if (action.equals("logout")) {
-            sessionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sessionCallback);
             this.logout(callbackContext);
             return true;
         } else if (action.equals("unlinkApp")) {
-            sessionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sessionCallback);
             this.unlinkApp(callbackContext);
             return true;
         } else if (action.equals("getAccessToken")) {
-            sessionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sessionCallback);
             this.getAccessToken(callbackContext);
             return true;
         } else if (action.equals("requestMe")) {
-            sessionCallback = new SessionCallback(callbackContext);
-            Session.getCurrentSession().addCallback(sessionCallback);
             this.requestMe(callbackContext);
+            return true;
+        } else if (action.equals("updateScopes")) {
+            this.updateScopes(callbackContext, new KakaoAccessTokenCallback(callbackContext), options);
+            return true;
+        } else if (action.equals("checkScopeStatus")) {
+            checkScopeStatus(callbackContext, options);
+            return true;
+        } else if (action.equals("requestSendMemo")) {
+            requestSendMemo(callbackContext, options);
+            return true;
+        } else if (action.equals("addPlusFriend")) {
+            addPlusFriend(callbackContext, options);
+            return true;
+        } else if (action.equals("chatPlusFriend")) {
+            chatPlusFriend(callbackContext, options);
+            return true;
+        } else if (action.equals("chatPlusFriendUrl")) {
+            chatPlusFriendUrl(callbackContext, options);
             return true;
         } else if (action.equals("sendLinkFeed")) {
             kakaoLinkResponseCallback = new KakaoLinkResponseCallback(callbackContext);
@@ -167,16 +181,35 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         return false;
     }
 
-
-    private void removeSessionCallback(){
-        if(sessionCallback == null){
-            return;
-        }
-        Session.getCurrentSession().removeCallback(sessionCallback);
+    private void removeSessionCallback() {
+        Session.getCurrentSession().clearCallbacks();
     }
 
     private void login(final CallbackContext callbackContext, final JSONArray options) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                kakaoMeV2ResponseCallback = new KakaoMeV2ResponseCallback(callbackContext) {
+                    @Override
+                    public void onFailure(ErrorResult errorResult) {
+                        loginProcess(callbackContext, options);
+                    }
+
+                    @Override
+                    public void onSessionClosed(ErrorResult errorResult) {
+                        loginProcess(callbackContext, options);
+                    }
+                };
+                UserManagement.getInstance().me(kakaoMeV2ResponseCallback);
+            }
+        });
+
+    }
+
+    private void loginProcess(final CallbackContext callbackContext, final JSONArray options) {
+
         try {
+            Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
             final JSONObject parameters = options.getJSONObject(0);
             if (parameters.has("authTypes")) {
                 JSONArray authTypes = new JSONArray(parameters.getString("authTypes"));
@@ -187,24 +220,30 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             e.printStackTrace();
             KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
         }
-
-
     }
 
     private void requestMe(final CallbackContext callbackContext) {
-        kakaoMeV2ResponseCallback = new KakaoMeV2ResponseCallback(callbackContext);
-        UserManagement.getInstance().me(kakaoMeV2ResponseCallback);
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+                kakaoMeV2ResponseCallback = new KakaoMeV2ResponseCallback(callbackContext);
+                UserManagement.getInstance().me(kakaoMeV2ResponseCallback);
+            }
+        });
+
     }
 
     private void logout(final CallbackContext callbackContext) {
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
                 UserManagement.getInstance().requestLogout(new LogoutResponseCallback() {
                     @Override
                     public void onCompleteLogout() {
                         Log.v(LOG_TAG, "kakao : onCompleteLogout");
-                        callbackContext.success();
+                        callbackContext.success("true");
                     }
                 });
             }
@@ -215,6 +254,8 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+
                 UserManagement.getInstance().requestUnlink(new UnLinkResponseCallback() {
                     @Override
                     public void onFailure(ErrorResult errorResult) {
@@ -245,8 +286,377 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+
                 String accessToken = Session.getCurrentSession().getTokenInfo().getAccessToken();
-                callbackContext.success(accessToken);
+                if(accessToken == null || accessToken.equalsIgnoreCase("")){
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, "accessToken is empty");
+                }else{
+                    callbackContext.success(accessToken);
+                }
+            }
+        });
+    }
+
+
+    private void updateScopes(final CallbackContext callbackContext, final KakaoAccessTokenCallback accessTokenCallback, final JSONArray options) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+                UserManagement.getInstance().me(new MeV2ResponseCallback() {
+                    @Override
+                    public void onFailure(ErrorResult errorResult) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+
+                    }
+
+                    @Override
+                    public void onSessionClosed(ErrorResult errorResult) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+
+                    }
+
+                    @Override
+                    public void onSuccess(final MeV2Response response) {
+                        cordova.getThreadPool().execute(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                try {
+                                    IScopeCallback checkScopeCallback = new IScopeCallback() {
+                                        @Override
+                                        public void onSuccess(List scopes) {
+                                            Session.getCurrentSession().updateScopes(currentActivity, scopes, accessTokenCallback);
+                                        }
+
+                                        @Override
+                                        public void onFailure(String errorMessage) {
+                                            KakaoCordovaErrorHandler.errorHandler(callbackContext, errorMessage);
+                                        }
+                                    };
+
+                                    checkScopeStatus(callbackContext, checkScopeCallback, options);
+
+
+                                } catch (Exception e) {
+
+                                    e.printStackTrace();
+                                    KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+
+    }
+
+    private void checkScopeStatus(final CallbackContext callbackContext, final JSONArray options) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+                IScopeCallback checkScopeCallback = new IScopeCallback() {
+                    @Override
+                    public void onSuccess(List scopes) {
+                        callbackContext.success(handleScropResult(scopes));
+                    }
+
+                    @Override
+                    public void onFailure(String errorMessage) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, errorMessage);
+                    }
+                };
+                checkScopeStatus(callbackContext, checkScopeCallback, options);
+            }
+        });
+
+    }
+
+    private void checkScopeStatus(final CallbackContext callbackContext, final IScopeCallback checkScopeCallback, final JSONArray options) {
+        UserManagement.getInstance().me(new MeV2ResponseCallback() {
+            @Override
+            public void onFailure(ErrorResult errorResult) {
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+
+            }
+
+            @Override
+            public void onSessionClosed(ErrorResult errorResult) {
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+
+            }
+
+            @Override
+            public void onSuccess(final MeV2Response response) {
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        List<String> scopes = new ArrayList<String>();
+                        scopes.add("account_email");
+                        scopes.add("phone_number");
+                        scopes.add("is_kakaotalk_user");
+                        scopes.add("age_range");
+                        scopes.add("gender");
+                        scopes.add("birthday");
+
+                        if (options != null) {
+                            try {
+                                final JSONObject parameters = options.getJSONObject(0);
+                                if (parameters.has("targetScopes")) {
+                                    JSONArray targetScopes = new JSONArray(parameters.getString("targetScopes"));
+
+                                    if (targetScopes != null && targetScopes.length() != 0) {
+                                        HashSet<String> uniqueScopes = new HashSet<String>();
+                                        for (int i = 0; i < targetScopes.length(); i++) {
+                                            uniqueScopes.add(targetScopes.get(i).toString());
+                                        }
+                                        scopes = new ArrayList<String>(uniqueScopes);
+                                    }
+                                }
+
+                            } catch (Exception e) {
+
+                                e.printStackTrace();
+                                KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                            }
+                        }
+
+
+                        List<String> newScopes = new ArrayList<String>();
+                        for (int i = 0; i < scopes.size(); i++) {
+                            if (scopes.get(i).equalsIgnoreCase("account_email") && response.getKakaoAccount().needsScopeAccountEmail()) {
+                                newScopes.add("account_email");
+                            } else if (scopes.get(i).equalsIgnoreCase("phone_number") && response.getKakaoAccount().needsScopePhoneNumber()) {
+                                newScopes.add("phone_number");
+                            } else if (scopes.get(i).equalsIgnoreCase("is_kakaotalk_user") && response.getKakaoAccount().needsScopeIsKakaotalkUser()) {
+                                newScopes.add("is_kakaotalk_user");
+                            } else if (scopes.get(i).equalsIgnoreCase("age_range") && response.getKakaoAccount().needsScopeAgeRange()) {
+                                newScopes.add("age_range");
+                            } else if (scopes.get(i).equalsIgnoreCase("gender") && response.getKakaoAccount().needsScopeGender()) {
+                                newScopes.add("gender");
+                            } else if (scopes.get(i).equalsIgnoreCase("birthday") && response.getKakaoAccount().needsScopeBirthday()) {
+                                newScopes.add("birthday");
+                            } else if (scopes.get(i).equalsIgnoreCase("talk_message")) {
+                                newScopes.add("talk_message");
+                            }
+                        }
+
+
+//                        if (newScopes.isEmpty()) {
+//                            checkScopeCallback.onFailure("User has all the required scopes");
+//
+//                            return;
+//                        }
+                        checkScopeCallback.onSuccess(newScopes);
+                    }
+                });
+            }
+        });
+    }
+
+    private void requestSendMemo(final CallbackContext callbackContext, final JSONArray options) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+                KakaoTalkMessageBuilder builder = new KakaoTalkMessageBuilder();
+                String templateId = "";
+                try {
+                    final JSONObject jsonObject = options.getJSONObject(0);
+                    if (jsonObject.has("templateId")) {
+                        templateId = jsonObject.getString("templateId");
+
+                    }
+                    if (templateId.equalsIgnoreCase("")) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "templateId is required");
+                        return;
+                    }
+
+                    builder.setTemplateId(templateId);
+
+
+                    if (jsonObject.has("arguments")) {
+                        JSONObject arguments = new JSONObject(jsonObject.getString("arguments"));
+
+                        try {
+
+                            Iterator<?> keys = arguments.keys();
+
+                            while (keys.hasNext()) {
+                                String key = (String) keys.next();
+                                String value = arguments.getString(key);
+                                builder.addParam(key, value);
+                            }
+
+                            KakaoTalkService.getInstance().requestSendMemo(new TalkResponseCallback<Boolean>() {
+                                @Override
+                                public void onNotKakaoTalkUser() {
+                                    KakaoCordovaErrorHandler.errorHandler(callbackContext, " not kakao talk user");
+                                }
+
+                                @Override
+                                public void onFailure(ErrorResult errorResult) {
+                                    if (errorResult.getErrorCode() == -402 && errorResult.getErrorMessage().contains("AUTHORIZATION_FAILED")) {
+                                        String data = "[{\"targetScopes\": [\"talk_message\"]}]";
+                                        try {
+                                            JSONArray jsonArr = new JSONArray(data);
+                                            updateScopes(callbackContext, new KakaoAccessTokenCallback(callbackContext) {
+                                                @Override
+                                                public void onAccessTokenReceived(AccessToken accessToken) {
+                                                    requestSendMemo(callbackContext, options);
+                                                }
+
+                                                @Override
+                                                public void onAccessTokenFailure(ErrorResult errorResult) {
+
+                                                    KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+                                                }
+                                            }, jsonArr);
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                        return;
+
+                                    }
+                                    KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+                                }
+
+                                @Override
+                                public void onSessionClosed(ErrorResult errorResult) {
+                                    KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+
+                                }
+
+                                @Override
+                                public void onNotSignedUp() {
+                                    KakaoCordovaErrorHandler.errorHandler(callbackContext, "this user is not signed up");
+                                }
+
+                                @Override
+                                public void onSuccess(Boolean result) {
+                                    callbackContext.success(emptyString);
+                                }
+
+                                @Override
+                                public void onDidStart() {
+
+                                }
+
+                                @Override
+                                public void onDidEnd() {
+
+                                }
+                            }, builder.getTemplateId(), builder.build());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                        }
+                    }
+
+
+                } catch (Exception e) {
+
+                    e.printStackTrace();
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                }
+
+            }
+        });
+
+
+    }
+
+    private void addPlusFriend(final CallbackContext callbackContext, final JSONArray options) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+                try {
+                    final JSONObject object = options.getJSONObject(0);
+                    if (object == null) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "parameter required");
+                        return;
+                    }
+                    if (!object.has("plusFriendId")) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "plusFriendId is null.");
+                        return;
+                    }
+
+                    String plusFriendId = object.getString("plusFriendId");
+                    PlusFriendService.getInstance().addFriend(currentActivity, plusFriendId);
+                    callbackContext.success(emptyString);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                }
+            }
+        });
+
+    }
+
+    private void chatPlusFriend(final CallbackContext callbackContext, final JSONArray options) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+                try {
+                    final JSONObject object = options.getJSONObject(0);
+                    if (object == null) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "parameter required");
+                        return;
+                    }
+                    if (!object.has("plusFriendId")) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "plusFriendId is null.");
+                        return;
+                    }
+
+                    String plusFriendId = object.getString("plusFriendId");
+                    PlusFriendService.getInstance().chat(currentActivity, plusFriendId);
+                    callbackContext.success(emptyString);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                }
+            }
+        });
+
+    }
+
+    private void chatPlusFriendUrl(final CallbackContext callbackContext, final JSONArray options) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Session.getCurrentSession().addCallback(new SessionCallback(callbackContext));
+                try {
+                    final JSONObject object = options.getJSONObject(0);
+                    if (object == null) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "parameter required");
+                        return;
+                    }
+                    if (!object.has("plusFriendId")) {
+                        KakaoCordovaErrorHandler.errorHandler(callbackContext, "plusFriendId is null.");
+                        return;
+                    }
+
+                    String plusFriendId = object.getString("plusFriendId");
+                    Uri addFriendUrl = PlusFriendService.getInstance().addFriendUrl(currentActivity, plusFriendId);
+                    Uri chatUrl = PlusFriendService.getInstance().chatUrl(currentActivity, plusFriendId);
+
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("addFriendUrl", addFriendUrl);
+                    jsonObject.put("chatUrl", chatUrl);
+                    callbackContext.success(jsonObject);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                }
             }
         });
 
@@ -486,29 +896,43 @@ public class KakaoCordovaSDK extends CordovaPlugin {
     }
 
     private void sendLinkCustom(CallbackContext callbackContext, JSONArray options) {
+        String templateId = "";
+        Map<String, String> templateArgs = new HashMap<String, String>();
+
         try {
-            final JSONObject object = options.getJSONObject(0);
-            if (object == null) {
-                KakaoCordovaErrorHandler.errorHandler(callbackContext, "custom template is null.");
+            final JSONObject jsonObject = options.getJSONObject(0);
+            if (jsonObject.has("templateId")) {
+                templateId = jsonObject.getString("templateId");
+
+            }
+            if (templateId.equalsIgnoreCase("")) {
+                KakaoCordovaErrorHandler.errorHandler(callbackContext, "templateId is required");
                 return;
             }
-            if (!object.has("templateId")) {
-                KakaoCordovaErrorHandler.errorHandler(callbackContext, "templateId is null.");
-                return;
+
+
+            if (jsonObject.has("arguments")) {
+                JSONObject arguments = new JSONObject(jsonObject.getString("arguments"));
+
+                try {
+
+                    Iterator<?> keys = arguments.keys();
+
+                    while (keys.hasNext()) {
+                        String key = (String) keys.next();
+                        String value = arguments.getString(key);
+                        templateArgs.put(key, value);
+                    }
+
+                    KakaoLinkService.getInstance().sendCustom(currentActivity, templateId, templateArgs,
+                            kakaoLinkResponseCallback);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
+                }
             }
 
-            String templateId = object.getString("templateId");
 
-            Map<String, String> templateArgs = new HashMap<String, String>();
-            if (object.has("title")) {
-                templateArgs.put("title", object.getString("title"));
-            }
-            if (object.has("description")) {
-                templateArgs.put("description", object.getString("description"));
-            }
-
-            KakaoLinkService.getInstance().sendCustom(currentActivity, templateId, templateArgs,
-                    kakaoLinkResponseCallback);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -657,31 +1081,31 @@ public class KakaoCordovaSDK extends CordovaPlugin {
                 if (urlinfo.has("type")) {
 
                     switch (urlinfo.getInt("type")) {
-                    case 2:
-                        urlInfoAndroid.put("type", "video");
-                        break;
-                    case 3:
-                        urlInfoAndroid.put("type", "music");
-                        break;
-                    case 4:
-                        urlInfoAndroid.put("type", "book");
-                        break;
-                    case 5:
-                        urlInfoAndroid.put("type", "article");
-                        break;
-                    case 6:
-                        urlInfoAndroid.put("type", "profile");
-                        break;
-                    default:
-                        urlInfoAndroid.put("type", "website");
-                        break;
+                        case 2:
+                            urlInfoAndroid.put("type", "video");
+                            break;
+                        case 3:
+                            urlInfoAndroid.put("type", "music");
+                            break;
+                        case 4:
+                            urlInfoAndroid.put("type", "book");
+                            break;
+                        case 5:
+                            urlInfoAndroid.put("type", "article");
+                            break;
+                        case 6:
+                            urlInfoAndroid.put("type", "profile");
+                            break;
+                        default:
+                            urlInfoAndroid.put("type", "website");
+                            break;
                     }
 
                 }
             }
 
             storyLink.openKakaoLink(currentActivity, post, appid, appver, appname, "UTF-8", urlInfoAndroid);
-            callbackContext.success("success!");
+            callbackContext.success(emptyString);
 
         } catch (Exception e) {
             KakaoCordovaErrorHandler.errorHandler(callbackContext, new ErrorResult(e));
@@ -889,16 +1313,16 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             return;
         }
         switch (requestCode) {
-        case REQUEST_EXTERNAL_STORAGE:
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                uploadImageForLink();
-            } else {
-                KakaoCordovaErrorHandler.errorHandler(kakaoLinkImageUploadResponseCallback.callbackContext,
-                        "User did not agree to give storage permission.");
-            }
-            break;
-        default:
-            break;
+            case REQUEST_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    uploadImageForLink();
+                } else {
+                    KakaoCordovaErrorHandler.errorHandler(kakaoLinkImageUploadResponseCallback.callbackContext,
+                            "User did not agree to give storage permission.");
+                }
+                break;
+            default:
+                break;
         }
 
     }
@@ -910,6 +1334,18 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             response = new JSONObject(meV2Response.toString());
             response.put("accessToken", accessToken);
             Log.v(LOG_TAG, "kakao response: " + response);
+        } catch (JSONException e) {
+            Log.v(LOG_TAG, "kakao : handleResult error - " + e.toString());
+        }
+        return response;
+    }
+
+    private JSONObject handleScropResult(List<String> scopes) {
+        Log.v(LOG_TAG, "kakao : handleScropResult");
+        JSONObject response = new JSONObject();
+        JSONArray JSONScopeArray = new JSONArray(scopes);
+        try {
+            response.put("requiredScopes", JSONScopeArray);
         } catch (JSONException e) {
             Log.v(LOG_TAG, "kakao : handleResult error - " + e.toString());
         }
@@ -950,6 +1386,13 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         return response;
     }
 
+    private interface IScopeCallback {
+        void onSuccess(List scopes);
+
+        void onFailure(String errorMessage);
+    }
+
+
     private class KakaoLinkImageUploadResponseCallback extends ResponseCallback<ImageUploadResponse> {
 
         private CallbackContext callbackContext;
@@ -985,8 +1428,8 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onSuccess(ImageDeleteResponse result) {
-
-            callbackContext.success("success " + result.toString());
+            callbackContext.success(emptyString);
+//            callbackContext.success("success " + result.toString());
         }
     }
 
@@ -1004,9 +1447,10 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         }
 
         @Override
-        public void onSuccess(KakaoLinkResponse result) {
-
-            callbackContext.success("" + handleKakaoLinkResponseResult(result));
+        public void onSuccess
+                (KakaoLinkResponse result) {
+            callbackContext.success(emptyString);
+//            callbackContext.success("" + handleKakaoLinkResponseResult(result));
         }
     }
 
@@ -1020,14 +1464,14 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
         @Override
         public void onFailure(ErrorResult errorResult) {
-            Log.e("onSessionClosed",errorResult.toString());
+            Log.e("onSessionClosed 1", errorResult.toString());
 
             KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
         }
 
         @Override
         public void onSessionClosed(ErrorResult errorResult) {
-            Log.e("onSessionClosed",errorResult.toString());
+            Log.e("onSessionClosed 1", errorResult.toString());
             KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
             Session.getCurrentSession().checkAndImplicitOpen();
         }
@@ -1046,6 +1490,28 @@ public class KakaoCordovaSDK extends CordovaPlugin {
 
     }
 
+
+    private class KakaoAccessTokenCallback extends AccessTokenCallback {
+
+        private CallbackContext callbackContext;
+
+        public KakaoAccessTokenCallback(final CallbackContext callbackContext) {
+            this.callbackContext = callbackContext;
+        }
+
+        @Override
+        public void onAccessTokenReceived(AccessToken accessToken) {
+            requestMe(callbackContext);
+        }
+
+        @Override
+        public void onAccessTokenFailure(ErrorResult errorResult) {
+
+            KakaoCordovaErrorHandler.errorHandler(callbackContext, errorResult);
+        }
+    }
+
+
     private class SessionCallback implements ISessionCallback {
 
         private CallbackContext callbackContext;
@@ -1063,9 +1529,10 @@ public class KakaoCordovaSDK extends CordovaPlugin {
         public void onSessionOpenFailed(KakaoException exception) {
 
             if (exception != null) {
-                if(exception.toString().contains("App restarted during Kakao login procedure. Restarting from the start.")){
+                if (exception.toString()
+                        .contains("App restarted during Kakao login procedure. Restarting from the start.")) {
 
-                }else{
+                } else {
                     KakaoCordovaErrorHandler.errorHandler(callbackContext, exception.toString());
                 }
 
@@ -1134,7 +1601,7 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             return new ISessionConfig() {
                 @Override
                 public AuthType[] getAuthTypes() {
-                    return new AuthType[] { AuthType.KAKAO_LOGIN_ALL };
+                    return new AuthType[]{AuthType.KAKAO_LOGIN_ALL};
                 }
 
                 @Override
@@ -1360,6 +1827,29 @@ public class KakaoCordovaSDK extends CordovaPlugin {
             } else {
                 return null;
             }
+        }
+    }
+
+
+    public class KakaoTalkMessageBuilder {
+        public Map<String, String> messageParams = new HashMap<String, String>();
+        public String templateId = "";
+
+        public KakaoTalkMessageBuilder addParam(String key, String value) {
+            messageParams.put("${" + key + "}", value);
+            return this;
+        }
+
+        public void setTemplateId(String id) {
+            templateId = id;
+        }
+
+        public Map<String, String> build() {
+            return messageParams;
+        }
+
+        public String getTemplateId() {
+            return templateId;
         }
     }
 }

@@ -2,11 +2,11 @@
 #import <Cordova/CDVPlugin.h>
 
 @implementation KakaoCordovaSDK
-
-
-@synthesize callbackId;
-
-
+    
+    
+    @synthesize callbackId;
+    
+    
 - (void)pluginInitialize {
     NSLog(@"Start KaKao plugin");
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
@@ -24,52 +24,73 @@
                                              selector:@selector(applicationDidBecomeActive)
                                                  name:UIApplicationDidBecomeActiveNotification object:nil];
 }
-
-- (void) login:(CDVInvokedUrlCommand*) command
-{
-    NSArray *defaultAuthTypes = @[@((KOAuthType)KOAuthTypeTalk),
-                                  @((KOAuthType)KOAuthTypeStory),
-                                  @((KOAuthType)KOAuthTypeAccount)];
-    NSMutableDictionary *loginOptions = [[command.arguments lastObject] mutableCopy];
-    NSArray* authTypes = loginOptions[@"authTypes"];
-    NSLog(@"%@", authTypes);
-    if(authTypes == nil || [authTypes count] < 1){
-        authTypes = [defaultAuthTypes copy];
-        NSLog(@"%@", authTypes);
-    } else if([authTypes count] >= 1) {
-        NSMutableArray* tmpAuthTypes = [[NSMutableArray alloc] init];
-        for (NSNumber* element in authTypes) {
-            NSLog(@"%@", element);
-            
-            if([element integerValue] == (MyAuthType)MyAuthTypeTalk){
-                [tmpAuthTypes addObject:[NSNumber numberWithInt:((KOAuthType)KOAuthTypeTalk)]];
-            } else if([element integerValue] == (MyAuthType)MyAuthTypeStory){
-                [tmpAuthTypes addObject:[NSNumber numberWithInt:((KOAuthType)KOAuthTypeStory)]];
-            } else if([element integerValue] == (MyAuthType)MyAuthTypeAccount){
-                [tmpAuthTypes addObject:[NSNumber numberWithInt:((KOAuthType)KOAuthTypeAccount)]];
-            }
-        }
-        authTypes = [tmpAuthTypes copy];
-    }
-    [[KOSession sharedSession] close];
     
-    [[KOSession sharedSession] openWithCompletionHandler:^(NSError *error) {
+- (void) login:(CDVInvokedUrlCommand*) command
+    {
+        [KOSessionTask userMeTaskWithCompletion:^(NSError *error, KOUserMe *me) {
+            CDVPluginResult* pluginResult = nil;
+            if (error) {
+                // failed
+                NSLog(@"login session failed.");
+                
+                NSArray *defaultAuthTypes = @[@((KOAuthType)KOAuthTypeTalk),
+                                              @((KOAuthType)KOAuthTypeStory),
+                                              @((KOAuthType)KOAuthTypeAccount)];
+                NSMutableDictionary *loginOptions = [[command.arguments lastObject] mutableCopy];
+                NSArray* authTypes = loginOptions[@"authTypes"];
+                NSLog(@"%@", authTypes);
+                if(authTypes == nil || [authTypes count] < 1){
+                    authTypes = [defaultAuthTypes copy];
+                    NSLog(@"%@", authTypes);
+                } else if([authTypes count] >= 1) {
+                    NSMutableArray* tmpAuthTypes = [[NSMutableArray alloc] init];
+                    for (NSNumber* element in authTypes) {
+                        NSLog(@"%@", element);
+                        
+                        if([element integerValue] == (MyAuthType)MyAuthTypeTalk){
+                            [tmpAuthTypes addObject:[NSNumber numberWithInt:((KOAuthType)KOAuthTypeTalk)]];
+                        } else if([element integerValue] == (MyAuthType)MyAuthTypeStory){
+                            [tmpAuthTypes addObject:[NSNumber numberWithInt:((KOAuthType)KOAuthTypeStory)]];
+                        } else if([element integerValue] == (MyAuthType)MyAuthTypeAccount){
+                            [tmpAuthTypes addObject:[NSNumber numberWithInt:((KOAuthType)KOAuthTypeAccount)]];
+                        }
+                    }
+                    authTypes = [tmpAuthTypes copy];
+                }
+                [[KOSession sharedSession] close];
+                
+                [[KOSession sharedSession] openWithCompletionHandler:^(NSError *error) {
+                    
+                    if ([[KOSession sharedSession] isOpen]) {
+                        // login success
+                        NSLog(@"login succeeded.");
+                        [self requestMe:command];
+                        
+                    } else {
+                        // failed
+                        NSLog(@"login failed.");
+                        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+                    }
+                    
+                    
+                } authTypes:authTypes];
+            } else {
+                // success
+                
+                NSMutableDictionary *userSession =  [NSMutableDictionary new];
+                
+                [userSession addEntriesFromDictionary: @{@"accessToken": [KOSession sharedSession].token.accessToken}];
+                [userSession addEntriesFromDictionary: me.dictionary];
+                
+                NSLog(@"%@", userSession);
+                
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:userSession];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+        }];
         
-        if ([[KOSession sharedSession] isOpen]) {
-            // login success
-            NSLog(@"login succeeded.");
-            [self requestMe:command];
-            
-        } else {
-            // failed
-            NSLog(@"login failed.");
-            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
-        }
-        
-        
-    } authTypes:authTypes];
-}
-
+    }
+    
 - (void)requestMe:(CDVInvokedUrlCommand*)command {
     [KOSessionTask userMeTaskWithCompletion:^(NSError *error, KOUserMe *me) {
         CDVPluginResult* pluginResult = nil;
@@ -82,350 +103,535 @@
             // success
             
             NSMutableDictionary *userSession =  [NSMutableDictionary new];
-
+            
             [userSession addEntriesFromDictionary: @{@"accessToken": [KOSession sharedSession].token.accessToken}];
             [userSession addEntriesFromDictionary: me.dictionary];
-
+            
             NSLog(@"%@", userSession);
-
+            
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:userSession];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }
     }];
 }
-
+    
 - (void)logout:(CDVInvokedUrlCommand*)command
-{
-    [[KOSession sharedSession] logoutAndCloseWithCompletionHandler:^(BOOL success, NSError *error) {
-        if (success) {
-            // logout success.
-            NSLog(@"Successful logout.");
-            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    {
+        [[KOSession sharedSession] logoutAndCloseWithCompletionHandler:^(BOOL success, NSError *error) {
+            if (success) {
+                // logout success.
+                NSLog(@"Successful logout.");
+                CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else {
+                // failed
+                NSLog(@"failed to logout.");
+                [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+                
+            }
+        }];
+        
+    }
+    
+    
+- (void)unlinkApp:(CDVInvokedUrlCommand*)command
+    {
+        [KOSessionTask unlinkTaskWithCompletionHandler:^(BOOL success, NSError *error) {
+            if (success) {
+                // logout success.
+                NSLog(@"Successful unlink.");
+                CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else {
+                // failed
+                NSLog(@"failed to unlink.");
+                [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+            }
+        }];
+    }
+    
+    
+    
+    
+- (void)getAccessToken: (CDVInvokedUrlCommand*)command
+    {
+        NSString *accessToken = [KOSession sharedSession].token.accessToken;
+        if(accessToken == nil || [@"" isEqualToString:accessToken]){
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"accessToken is empty"];
+
+        }else{
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[KOSession sharedSession].token.accessToken];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        } else {
+        }
+    }
+    
+- (void) updateScopes:(CDVInvokedUrlCommand*)command{
+    [KOSessionTask userMeTaskWithCompletion:^(NSError *error, KOUserMe *me) {
+        CDVPluginResult* pluginResult = nil;
+        if (error) {
             // failed
-            NSLog(@"failed to logout.");
+            NSLog(@"login session failed.");
             [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+            
+        } else {
+            // success
+            NSMutableArray* scopes = [[NSMutableArray alloc] init];
+            [scopes addObject:@"account_email"];
+            [scopes addObject:@"phone_number"];
+            [scopes addObject:@"is_kakaotalk_user"];
+            [scopes addObject:@"age_range"];
+            [scopes addObject:@"gender"];
+            [scopes addObject:@"birthday"];
+            
+            NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+            NSArray* targetScopes = options[@"targetScopes"];
+            NSLog(@"%@", targetScopes);
+            if([targetScopes count] >= 1) {
+                NSArray *uniqueArray = [[NSSet setWithArray:targetScopes] allObjects];
+                scopes = [uniqueArray copy];
+            }
+            
+            NSMutableArray* newScopes = [[NSMutableArray alloc] init];
+            
+            NSUInteger i;
+            for (i = 0; i < [scopes count]; i++) {
+                NSString * stringFromArray = [scopes objectAtIndex: i];
+                if ([@"account_email" isEqualToString:stringFromArray] && [me.account needsScopeAccountEmail]) {
+                    [newScopes addObject:@"account_email"];
+                } else if ([@"phone_number" isEqualToString:stringFromArray] && [me.account needsScopePhoneNumber]) {
+                    [newScopes addObject:@"phone_number"];
+                }else if ([@"age_range" isEqualToString:stringFromArray] && [me.account needsScopeAgeRange]) {
+                    [newScopes addObject:@"age_range"];
+                }else if ([@"birthday" isEqualToString:stringFromArray] && [me.account needsScopeBirthday]) {
+                    [newScopes addObject:@"birthday"];
+                }else if ([@"gender" isEqualToString:stringFromArray] && [me.account needsScopeGender]) {
+                    [newScopes addObject:@"gender"];
+                }else if ([@"is_kakaotalk_user" isEqualToString:stringFromArray] && [me.account needsScopeIsKakaotalkUser]) {
+                    [newScopes addObject:@"is_kakaotalk_user"];
+                }else if ([@"talk_message" isEqualToString:stringFromArray]) {
+                    [newScopes addObject:@"talk_message"];
+                }
+            }
+            
+            
+            NSMutableDictionary *requiredScopes =  [NSMutableDictionary new];
+            [requiredScopes addEntriesFromDictionary: @{@"requiredScopes": newScopes}];
+            
+            NSLog(@"%@", requiredScopes);
+            
+            [[KOSession sharedSession] updateScopes:newScopes completionHandler:^(NSError *error) {
+                if (error) {
+                    [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+                    
+                } else {
+                    [self requestMe:command];
+                }
+            }];
             
         }
     }];
-    
 }
-
-
-- (void)unlinkApp:(CDVInvokedUrlCommand*)command
-{
-    [KOSessionTask unlinkTaskWithCompletionHandler:^(BOOL success, NSError *error) {
-        if (success) {
-            // logout success.
-            NSLog(@"Successful unlink.");
-            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        } else {
+    
+    
+    
+- (void) checkScopeStatus:(CDVInvokedUrlCommand*)command{
+    [KOSessionTask userMeTaskWithCompletion:^(NSError *error, KOUserMe *me) {
+        CDVPluginResult* pluginResult = nil;
+        if (error) {
             // failed
-            NSLog(@"failed to unlink.");
+            NSLog(@"login session failed.");
             [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+            
+        } else {
+            // success
+            NSMutableArray* scopes = [[NSMutableArray alloc] init];
+            [scopes addObject:@"account_email"];
+            [scopes addObject:@"phone_number"];
+            [scopes addObject:@"is_kakaotalk_user"];
+            [scopes addObject:@"age_range"];
+            [scopes addObject:@"gender"];
+            [scopes addObject:@"birthday"];
+            
+            NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+            NSArray* targetScopes = options[@"targetScopes"];
+            NSLog(@"%@", targetScopes);
+            if([targetScopes count] >= 1) {
+                NSArray *uniqueArray = [[NSSet setWithArray:targetScopes] allObjects];
+                scopes = [uniqueArray copy];
+            }
+            
+            NSMutableArray* newScopes = [[NSMutableArray alloc] init];
+            
+            NSUInteger i;
+            for (i = 0; i < [scopes count]; i++) {
+                NSString * stringFromArray = [scopes objectAtIndex: i];
+                if ([@"account_email" isEqualToString:stringFromArray] && [me.account needsScopeAccountEmail]) {
+                    [newScopes addObject:@"account_email"];
+                } else if ([@"phone_number" isEqualToString:stringFromArray] && [me.account needsScopePhoneNumber]) {
+                    [newScopes addObject:@"phone_number"];
+                }else if ([@"age_range" isEqualToString:stringFromArray] && [me.account needsScopeAgeRange]) {
+                    [newScopes addObject:@"age_range"];
+                }else if ([@"birthday" isEqualToString:stringFromArray] && [me.account needsScopeBirthday]) {
+                    [newScopes addObject:@"birthday"];
+                }else if ([@"gender" isEqualToString:stringFromArray] && [me.account needsScopeGender]) {
+                    [newScopes addObject:@"gender"];
+                }else if ([@"is_kakaotalk_user" isEqualToString:stringFromArray] && [me.account needsScopeIsKakaotalkUser]) {
+                    [newScopes addObject:@"is_kakaotalk_user"];
+                }else if ([@"talk_message" isEqualToString:stringFromArray]) {
+                    [newScopes addObject:@"talk_message"];
+                }
+            }
+            
+            NSMutableDictionary *requiredScopes =  [NSMutableDictionary new];
+            [requiredScopes addEntriesFromDictionary: @{@"requiredScopes": newScopes}];
+            
+            NSLog(@"%@", requiredScopes);
+            
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:requiredScopes];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }
     }];
 }
-
-
-
-
-- (void)getAccessToken: (CDVInvokedUrlCommand*)command
-{
-    CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[KOSession sharedSession].token.accessToken];
+    
+- (void) requestSendMemo:(CDVInvokedUrlCommand*)command{
+    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+    NSString* templateId = options[@"templateId"];
+    NSMutableDictionary* arguments = options[@"arguments"];
+    
+    if(!templateId){
+        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"templateId is required"];
+        return;
+    }
+    [KOSessionTask talkMemoSendTaskWithTemplateId:templateId
+                                     templateArgs:arguments
+                                completionHandler:^(NSError *error) {
+                                    if (error) {
+                                        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+                                        
+                                    } else {
+                                        CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+                                        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                                                                            }
+                                }];
+    
+}
+    
+- (void) addPlusFriend:(CDVInvokedUrlCommand*)command{
+    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+    NSString *plusFriendId = options[@"plusFriendId"];
+    KPFPlusFriend *plusFriend = [[KPFPlusFriend alloc] initWithId:plusFriendId];
+    [plusFriend addFriend];
+    CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
-
-
+    
+- (void) chatPlusFriend:(CDVInvokedUrlCommand*)command{
+    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+    NSString *plusFriendId = options[@"plusFriendId"];
+    KPFPlusFriend *plusFriend = [[KPFPlusFriend alloc] initWithId:plusFriendId];
+    [plusFriend chat];
+    CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+    
+- (void) chatPlusFriendUrl:(CDVInvokedUrlCommand*)command{
+    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+    NSString *plusFriendId = options[@"plusFriendId"];
+    KPFPlusFriend *plusFriend = [[KPFPlusFriend alloc] initWithId:plusFriendId];
+    NSURL *chatURL = [plusFriend chatURL];
+    NSURL *addFriendURL = [plusFriend addFriendURL];
+    
+    NSMutableDictionary *urls =  [NSMutableDictionary new];
+    [urls addEntriesFromDictionary: @{@"addFriendUrl": [addFriendURL absoluteString]}];
+    [urls addEntriesFromDictionary: @{@"chatUrl": [chatURL absoluteString]}];
+    
+    NSLog(@"%@", urls);
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:urls];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+    
 - (void)sendLinkFeed:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
+        // feed template
+        KMTTemplate *template = [KMTFeedTemplate feedTemplateWithBuilderBlock:^(KMTFeedTemplateBuilder * _Nonnull feedTemplateBuilder) {
+            
+            // content
+            KMTContentObject* feedContentObject = [self getKMTContentObject:options[@"content"]];
+            if(feedContentObject == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
+                return;
+            }
+            feedTemplateBuilder.content = feedContentObject;
+            
+            // social
+            KMTSocialObject* feedSocialObject = [self getKMTSocialObject:options[@"social"]];
+            if(feedSocialObject != NULL){
+                feedTemplateBuilder.social = feedSocialObject;
+            }
+            
+            // buttons
+            [self addButtonsArray:options[@"buttons"] templateBuilder:feedTemplateBuilder];
+            
+            // buttonTitle
+            if(options[@"buttonTitle"] != NULL){
+                feedTemplateBuilder.buttonTitle = options[@"buttonTitle"];
+            }
+            
+        }];
+        
+        // 카카오링크 실행
+        [self sendDefaultWithTemplate:template command:command];
+    }
     
-    // feed template
-    KMTTemplate *template = [KMTFeedTemplate feedTemplateWithBuilderBlock:^(KMTFeedTemplateBuilder * _Nonnull feedTemplateBuilder) {
-        
-        // content
-        KMTContentObject* feedContentObject = [self getKMTContentObject:options[@"content"]];
-        if(feedContentObject == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
-            return;
-        }
-        feedTemplateBuilder.content = feedContentObject;
-        
-        // social
-        KMTSocialObject* feedSocialObject = [self getKMTSocialObject:options[@"social"]];
-        if(feedSocialObject != NULL){
-            feedTemplateBuilder.social = feedSocialObject;
-        }
-        
-        // buttons
-        [self addButtonsArray:options[@"buttons"] templateBuilder:feedTemplateBuilder];
-        
-        // buttonTitle
-        if(options[@"buttonTitle"] != NULL){
-            feedTemplateBuilder.buttonTitle = options[@"buttonTitle"];
-        }
-        
-    }];
-    
-    // 카카오링크 실행
-    [self sendDefaultWithTemplate:template command:command];
-}
-
 - (void)sendLinkList:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
+        
+        // List 타입 템플릿 오브젝트 생성
+        KMTTemplate *template = [KMTListTemplate listTemplateWithBuilderBlock:^(KMTListTemplateBuilder * _Nonnull listTemplateBuilder) {
+            
+            
+            // 헤더 타이틀 및 링크
+            if(options[@"headerTitle"] == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerTitle is null."];
+                return;
+            }
+            listTemplateBuilder.headerTitle = options[@"headerTitle"];
+            
+            // headerLink
+            KMTLinkObject* linkObject = [self getKMTLinkObject:options[@"headerLink"]];
+            if(linkObject == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerLink is null."];
+                return;
+            }
+            listTemplateBuilder.headerLink = linkObject;
+            
+            // 컨텐츠 목록
+            if(FALSE == [self addContentsArray:options[@"contents"] templateBuilder:listTemplateBuilder]){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
+                return;
+            }
+            
+            // buttons
+            [self addButtonsArray:options[@"buttons"] templateBuilder:listTemplateBuilder];
+            
+            // buttonTitle
+            if(options[@"buttonTitle"] != NULL){
+                listTemplateBuilder.buttonTitle = options[@"buttonTitle"];
+            }
+        }];
+        
+        // 카카오링크 실행
+        [self sendDefaultWithTemplate:template command:command];
+        
+    }
     
-    
-    // List 타입 템플릿 오브젝트 생성
-    KMTTemplate *template = [KMTListTemplate listTemplateWithBuilderBlock:^(KMTListTemplateBuilder * _Nonnull listTemplateBuilder) {
-        
-        
-        // 헤더 타이틀 및 링크
-        if(options[@"headerTitle"] == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerTitle is null."];
-            return;
-        }
-        listTemplateBuilder.headerTitle = options[@"headerTitle"];
-        
-        // headerLink
-        KMTLinkObject* linkObject = [self getKMTLinkObject:options[@"headerLink"]];
-        if(linkObject == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerLink is null."];
-            return;
-        }
-        listTemplateBuilder.headerLink = linkObject;
-        
-        // 컨텐츠 목록
-        if(FALSE == [self addContentsArray:options[@"contents"] templateBuilder:listTemplateBuilder]){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
-            return;
-        }
-        
-        // buttons
-        [self addButtonsArray:options[@"buttons"] templateBuilder:listTemplateBuilder];
-        
-        // buttonTitle
-        if(options[@"buttonTitle"] != NULL){
-            listTemplateBuilder.buttonTitle = options[@"buttonTitle"];
-        }
-    }];
-    
-    // 카카오링크 실행
-    [self sendDefaultWithTemplate:template command:command];
-    
-}
-
 - (void)sendLinkLocation:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
+        // Location 타입 템플릿 오브젝트 생성
+        KMTTemplate *template = [KMTLocationTemplate locationTemplateWithBuilderBlock:^(KMTLocationTemplateBuilder * _Nonnull locationTemplateBuilder) {
+            
+            // 주소
+            if(options[@"address"] == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"address is null."];
+                return;
+            }
+            locationTemplateBuilder.address = options[@"address"];
+            
+            if(options[@"addressTitle"] != NULL){
+                locationTemplateBuilder.addressTitle = options[@"addressTitle"];
+            }
+            
+            // content
+            KMTContentObject* locationContentObject = [self getKMTContentObject:options[@"content"]];
+            if(locationContentObject == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
+                return;
+            }
+            locationTemplateBuilder.content = locationContentObject;
+            
+            // social
+            KMTSocialObject* feedSocialObject = [self getKMTSocialObject:options[@"social"]];
+            if(feedSocialObject != NULL){
+                locationTemplateBuilder.social = feedSocialObject;
+            }
+            
+            // buttons
+            [self addButtonsArray:options[@"buttons"] templateBuilder:locationTemplateBuilder];
+            
+            // buttonTitle
+            if(options[@"buttonTitle"] != NULL){
+                locationTemplateBuilder.buttonTitle = options[@"buttonTitle"];
+            }
+        }];
+        
+        // 카카오링크 실행
+        [self sendDefaultWithTemplate:template command:command];
+    }
     
-    // Location 타입 템플릿 오브젝트 생성
-    KMTTemplate *template = [KMTLocationTemplate locationTemplateWithBuilderBlock:^(KMTLocationTemplateBuilder * _Nonnull locationTemplateBuilder) {
-        
-        // 주소
-        if(options[@"address"] == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"address is null."];
-            return;
-        }
-        locationTemplateBuilder.address = options[@"address"];
-        
-        if(options[@"addressTitle"] != NULL){
-            locationTemplateBuilder.addressTitle = options[@"addressTitle"];
-        }
-        
-        // content
-        KMTContentObject* locationContentObject = [self getKMTContentObject:options[@"content"]];
-        if(locationContentObject == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
-            return;
-        }
-        locationTemplateBuilder.content = locationContentObject;
-        
-        // social
-        KMTSocialObject* feedSocialObject = [self getKMTSocialObject:options[@"social"]];
-        if(feedSocialObject != NULL){
-            locationTemplateBuilder.social = feedSocialObject;
-        }
-        
-        // buttons
-        [self addButtonsArray:options[@"buttons"] templateBuilder:locationTemplateBuilder];
-        
-        // buttonTitle
-        if(options[@"buttonTitle"] != NULL){
-            locationTemplateBuilder.buttonTitle = options[@"buttonTitle"];
-        }
-    }];
-    
-    // 카카오링크 실행
-    [self sendDefaultWithTemplate:template command:command];
-}
-
 - (void)sendLinkCommerce:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
+        // Commerce 타입 템플릿 오브젝트 생성
+        KMTTemplate *template = [KMTCommerceTemplate commerceTemplateWithBuilderBlock:^(KMTCommerceTemplateBuilder * _Nonnull commerceTemplateBuilder) {
+            
+            // content
+            KMTContentObject* commerceContentObject = [self getKMTContentObject:options[@"content"]];
+            if(commerceContentObject == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
+                return;
+            }
+            commerceTemplateBuilder.content = commerceContentObject;
+            
+            // commerce
+            KMTCommerceObject* feedCommerceObject = [self getKMTCommerceObject:options[@"commerce"]];
+            if(feedCommerceObject == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"regularPrice is null."];
+                return;
+            }
+            commerceTemplateBuilder.commerce = feedCommerceObject;
+            
+            // buttons
+            [self addButtonsArray:options[@"buttons"] templateBuilder:commerceTemplateBuilder];
+            
+            // buttonTitle
+            if(options[@"buttonTitle"] != NULL){
+                commerceTemplateBuilder.buttonTitle = options[@"buttonTitle"];
+            }
+            
+        }];
+        
+        // 카카오링크 실행
+        [self sendDefaultWithTemplate:template command:command];
+    }
     
-    // Commerce 타입 템플릿 오브젝트 생성
-    KMTTemplate *template = [KMTCommerceTemplate commerceTemplateWithBuilderBlock:^(KMTCommerceTemplateBuilder * _Nonnull commerceTemplateBuilder) {
-        
-        // content
-        KMTContentObject* commerceContentObject = [self getKMTContentObject:options[@"content"]];
-        if(commerceContentObject == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Either Content or Content.title/link/imageURL is null."];
-            return;
-        }
-        commerceTemplateBuilder.content = commerceContentObject;
-        
-        // commerce
-        KMTCommerceObject* feedCommerceObject = [self getKMTCommerceObject:options[@"commerce"]];
-        if(feedCommerceObject == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"regularPrice is null."];
-            return;
-        }
-        commerceTemplateBuilder.commerce = feedCommerceObject;
-        
-        // buttons
-        [self addButtonsArray:options[@"buttons"] templateBuilder:commerceTemplateBuilder];
-        
-        // buttonTitle
-        if(options[@"buttonTitle"] != NULL){
-            commerceTemplateBuilder.buttonTitle = options[@"buttonTitle"];
-        }
-        
-    }];
     
-    // 카카오링크 실행
-    [self sendDefaultWithTemplate:template command:command];
-}
-
-
 - (void)sendLinkText:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
+        // feed template
+        KMTTemplate *template = [KMTTextTemplate textTemplateWithBuilderBlock:^(KMTTextTemplateBuilder * _Nonnull textTemplateBuilder) {
+            
+            // text
+            if(options[@"text"] == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerTitle is null."];
+                return;
+            }
+            textTemplateBuilder.text = options[@"text"];
+            
+            // link
+            KMTLinkObject* linkObject = [self getKMTLinkObject:options[@"link"]];
+            if(linkObject == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"link is null."];
+                return;
+            }
+            textTemplateBuilder.link = linkObject;
+            
+            
+            // buttons
+            [self addButtonsArray:options[@"buttons"] templateBuilder:textTemplateBuilder];
+            
+            // buttonTitle
+            if(options[@"buttonTitle"] != NULL){
+                textTemplateBuilder.buttonTitle = options[@"buttonTitle"];
+            }
+            
+        }];
+        
+        // 카카오링크 실행
+        [self sendDefaultWithTemplate:template command:command];
+    }
     
-    // feed template
-    KMTTemplate *template = [KMTTextTemplate textTemplateWithBuilderBlock:^(KMTTextTemplateBuilder * _Nonnull textTemplateBuilder) {
-        
-        // text
-        if(options[@"text"] == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"headerTitle is null."];
-            return;
-        }
-        textTemplateBuilder.text = options[@"text"];
-        
-        // link
-        KMTLinkObject* linkObject = [self getKMTLinkObject:options[@"link"]];
-        if(linkObject == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"link is null."];
-            return;
-        }
-        textTemplateBuilder.link = linkObject;
-        
-        
-        // buttons
-        [self addButtonsArray:options[@"buttons"] templateBuilder:textTemplateBuilder];
-        
-        // buttonTitle
-        if(options[@"buttonTitle"] != NULL){
-            textTemplateBuilder.buttonTitle = options[@"buttonTitle"];
-        }
-        
-    }];
-    
-    // 카카오링크 실행
-    [self sendDefaultWithTemplate:template command:command];
-}
-
 - (void)sendLinkScrap:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
-    
-    // 스크랩할 웹페이지 URL
-    if(options[@"url"] == NULL){
-        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
-        return;
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
+        // 스크랩할 웹페이지 URL
+        if(options[@"url"] == NULL){
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
+            return;
+        }
+        NSURL *URL = [NSURL URLWithString:options[@"url"]];
+        
+        // 카카오링크 실행
+        [[KLKTalkLinkCenter sharedCenter] sendScrapWithURL:URL success:^(NSDictionary<NSString *,NSString *> * _Nullable warningMsg, NSDictionary<NSString *,NSString *> * _Nullable argumentMsg) {
+            
+            // 성공
+            NSLog(@"warning message: %@", warningMsg);
+            NSLog(@"argument message: %@", argumentMsg);
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            
+        } failure:^(NSError * _Nonnull error) {
+            
+            NSLog(@"error: %@", error);
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+            
+        }];
     }
-    NSURL *URL = [NSURL URLWithString:options[@"url"]];
     
-    // 카카오링크 실행
-    [[KLKTalkLinkCenter sharedCenter] sendScrapWithURL:URL success:^(NSDictionary<NSString *,NSString *> * _Nullable warningMsg, NSDictionary<NSString *,NSString *> * _Nullable argumentMsg) {
-        
-        // 성공
-        NSLog(@"warning message: %@", warningMsg);
-        NSLog(@"argument message: %@", argumentMsg);
-        CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"success!"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        
-    } failure:^(NSError * _Nonnull error) {
-        
-        NSLog(@"error: %@", error);
-        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
-        
-    }];
-}
-
 - (void)sendLinkCustom:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
-    // 템플릿 ID
-    if(options[@"templateId"] == NULL){
-        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"templateId is null."];
-        return;
-    }
-    NSString *templateId = options[@"templateId"];
-    
-    // 템플릿 Arguments
-    NSMutableDictionary *templateArgs =  [NSMutableDictionary new];
-    if(options[@"title"] != NULL){
-        [templateArgs setObject:options[@"title"] forKey:@"title"];
-    }
-    if(options[@"description"] != NULL){
-        [templateArgs setObject:options[@"description"] forKey:@"description"];
-    }
-    
-    // 카카오링크 실행
-    [[KLKTalkLinkCenter sharedCenter] sendCustomWithTemplateId:templateId templateArgs:templateArgs success:^(NSDictionary<NSString *,NSString *> * _Nullable warningMsg, NSDictionary<NSString *,NSString *> * _Nullable argumentMsg) {
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        // 템플릿 ID
+        if(options[@"templateId"] == NULL){
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"templateId is null."];
+            return;
+        }
+        NSString *templateId = options[@"templateId"];
         
-        // 성공
-        NSLog(@"warning message: %@", warningMsg);
-        NSLog(@"argument message: %@", argumentMsg);
-        CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"success!"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         
-    } failure:^(NSError * _Nonnull error) {
-        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
-        
-    }];
-    
-}
+        // 템플릿 Arguments
+        NSMutableDictionary* templateArgs = options[@"arguments"];
 
+  
+        // 카카오링크 실행
+        [[KLKTalkLinkCenter sharedCenter] sendCustomWithTemplateId:templateId templateArgs:templateArgs success:^(NSDictionary<NSString *,NSString *> * _Nullable warningMsg, NSDictionary<NSString *,NSString *> * _Nullable argumentMsg) {
+            
+            // 성공
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            
+        } failure:^(NSError * _Nonnull error) {
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+            
+        }];
+        
+    }
+    
 - (void)sendDefaultWithTemplate:(KMTTemplate*)template command:(CDVInvokedUrlCommand*)command
-{
-    [[KLKTalkLinkCenter sharedCenter] sendDefaultWithTemplate:template success:^(NSDictionary<NSString *,NSString *> * _Nullable warningMsg, NSDictionary<NSString *,NSString *> * _Nullable argumentMsg) {
-        
-        // 성공
-        NSLog(@"warning message: %@", warningMsg);
-        NSLog(@"argument message: %@", argumentMsg);
-        CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"success!"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        
-    } failure:^(NSError * _Nonnull error) {
-        
-        NSLog(@"error: %@", error);
-        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
-        
-    }];
-}
-
+    {
+        [[KLKTalkLinkCenter sharedCenter] sendDefaultWithTemplate:template success:^(NSDictionary<NSString *,NSString *> * _Nullable warningMsg, NSDictionary<NSString *,NSString *> * _Nullable argumentMsg) {
+            
+            // 성공
+            NSLog(@"warning message: %@", warningMsg);
+            NSLog(@"argument message: %@", argumentMsg);
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            
+        } failure:^(NSError * _Nonnull error) {
+            
+            NSLog(@"error: %@", error);
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+            
+        }];
+    }
+    
 - (BOOL)addContentsArray:(NSDictionary *)object templateBuilder:(KMTListTemplateBuilder *)templateBuilder {
     if(object == NULL){
         return FALSE;
@@ -444,7 +650,7 @@
     }
     return TRUE;
 }
-
+    
 - (void)addButtonsArray:(NSDictionary *)object templateBuilder:(NSObject *)templateBuilder {
     if(object == NULL){
         return;
@@ -471,7 +677,7 @@
         }
     }
 }
-
+    
 - (KMTContentObject *)getKMTContentObject:(NSDictionary *)object {
     if(object == NULL){
         return NULL;
@@ -502,7 +708,7 @@
         }
     }];
 }
-
+    
 - (KMTCommerceObject *)getKMTCommerceObject:(NSDictionary *)object {
     if(object == NULL){
         return NULL;
@@ -529,7 +735,7 @@
         }
     }];
 }
-
+    
 - (KMTSocialObject *)getKMTSocialObject:(NSDictionary *)object {
     if(object == NULL){
         return NULL;
@@ -557,8 +763,8 @@
         }
     }];
 }
-
-
+    
+    
 - (KMTButtonObject *)getKMTButtonObject:(NSDictionary *)object {
     if(object == NULL){
         return NULL;
@@ -571,7 +777,7 @@
         }
     }];
 }
-
+    
 - (KMTLinkObject *)getKMTLinkObject:(NSDictionary *)object {
     if(object == NULL){
         return NULL;
@@ -595,67 +801,67 @@
         }
     }];
 }
-
+    
 - (void)uploadImage:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
-    self.callbackId = command.callbackId;
-    if(options[@"fileOrUrl"] == NULL){
-        [self uploadLocalImage];
-        return;
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        self.callbackId = command.callbackId;
+        if(options[@"fileOrUrl"] == NULL){
+            [self uploadLocalImage];
+            return;
+        }
+        if([options[@"fileOrUrl"] isEqualToString:@"file"]){
+            [self uploadLocalImage];
+        }else if([options[@"fileOrUrl"] isEqualToString:@"url"]){
+            if(options[@"url"] == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
+                return;
+            }
+            [self scrapRemoteImage:options[@"url"]];
+            
+        }else{
+            [self uploadLocalImage];
+        }
+        
     }
-    if([options[@"fileOrUrl"] isEqualToString:@"file"]){
-        [self uploadLocalImage];
-    }else if([options[@"fileOrUrl"] isEqualToString:@"url"]){
+    
+- (void)deleteUploadedImage:(CDVInvokedUrlCommand*)command
+    {
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
         if(options[@"url"] == NULL){
             [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
             return;
         }
-        [self scrapRemoteImage:options[@"url"]];
+        if([[options[@"url"] stringByTrimmingCharactersInSet:
+             [NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]){
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
+            return;
+        }
+        NSURL *imageURL = [NSURL URLWithString:options[@"url"]];
+        [[KLKImageStorage sharedStorage] deleteWithImageURL:imageURL success:^{
+            // 삭제 성공
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        } failure:^(NSError * _Nonnull error) {
+            // 삭제 실패
+            [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
+            
+        }];
         
-    }else{
-        [self uploadLocalImage];
-    }
-    
-}
-
-- (void)deleteUploadedImage:(CDVInvokedUrlCommand*)command
-{
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
-    
-    if(options[@"url"] == NULL){
-        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
-        return;
-    }
-    if([[options[@"url"] stringByTrimmingCharactersInSet:
-         [NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]){
-        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"url is null."];
-        return;
-    }
-    NSURL *imageURL = [NSURL URLWithString:options[@"url"]];
-    [[KLKImageStorage sharedStorage] deleteWithImageURL:imageURL success:^{
-        // 삭제 성공
-        CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"success!"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    } failure:^(NSError * _Nonnull error) {
-        // 삭제 실패
-        [self errorHandler:command.callbackId error:error errorCode:0 errorMessage:nil];
         
-    }];
+    }
     
-    
-}
-
 - (void)uploadLocalImage
-{
-    UIImagePickerController *picker = [[UIImagePickerController alloc] init];
-    picker.delegate = self;
-    picker.sourceType = UIImagePickerControllerSourceTypeSavedPhotosAlbum;
-    [self.viewController presentViewController:picker animated:YES completion:nil];
-}
-
+    {
+        UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+        picker.delegate = self;
+        picker.sourceType = UIImagePickerControllerSourceTypeSavedPhotosAlbum;
+        [self.viewController presentViewController:picker animated:YES completion:nil];
+    }
+    
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info {
     [picker dismissViewControllerAnimated:YES completion:nil];
     
@@ -671,112 +877,112 @@
         
     }];
 }
-
+    
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
     [picker dismissViewControllerAnimated:YES completion:nil];
 }
-
+    
 - (void)scrapRemoteImage:(NSString*)url
-{
-    
-    // 원격지 이미지 URL
-    NSURL *imageURL = [NSURL URLWithString:url];
-    
-    [[KLKImageStorage sharedStorage] scrapWithImageURL:imageURL success:^(KLKImageInfo * _Nonnull original) {
+    {
         
-        CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[original.URL absoluteString]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
-    } failure:^(NSError * _Nonnull error) {
-        [self errorHandler:self.callbackId error:error errorCode:0 errorMessage:nil];
+        // 원격지 이미지 URL
+        NSURL *imageURL = [NSURL URLWithString:url];
         
-    }];
-}
-
+        [[KLKImageStorage sharedStorage] scrapWithImageURL:imageURL success:^(KLKImageInfo * _Nonnull original) {
+            
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[original.URL absoluteString]];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+        } failure:^(NSError * _Nonnull error) {
+            [self errorHandler:self.callbackId error:error errorCode:0 errorMessage:nil];
+            
+        }];
+    }
+    
 - (void)postStory:(CDVInvokedUrlCommand*)command
-{
-    
-    NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
-    NSLog(@"%@", options);
-    
-    if (![KakaoCordovaStoryLinkHelper canOpenStoryLink]) {
-        NSLog(@"Cannot open kakao story.");
-        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Cannot open kakao story."];
-        return;
-    }
-    if(options[@"post"] == NULL || options[@"appver"] == NULL ){
-        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"post or appver is null."];
-        return;
-    }
-    NSString* post = options[@"post"];
-    NSString* appver = options[@"appver"];
-    NSBundle *bundle = [NSBundle mainBundle];
-    NSString* appid = [bundle bundleIdentifier];
-    if(options[@"appid"] != NULL){
-        appid = options[@"appid"] ;
-    }
-    NSString* appname = [bundle objectForInfoDictionaryKey:@"CFBundleName"];
-    if(options[@"appname"] != NULL){
-        appname = options[@"appname"] ;
-    }
-    ScrapInfo *scrapInfo = nil;
-    if(options[@"urlinfo"] != NULL){
-        scrapInfo = [[ScrapInfo alloc] init];
-        NSString* title = (options[@"urlinfo"])[@"title"];
-        NSString* desc = (options[@"urlinfo"])[@"desc"];
-        NSArray* imageURLs = (options[@"urlinfo"])[@"imageURLs"];
-        NSString* type = (options[@"urlinfo"])[@"type"];
+    {
         
-        if(title == NULL){
-            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"title in urlinfo is null."];
+        NSMutableDictionary *options = [[command.arguments lastObject] mutableCopy];
+        NSLog(@"%@", options);
+        
+        if (![KakaoCordovaStoryLinkHelper canOpenStoryLink]) {
+            NSLog(@"Cannot open kakao story.");
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"Cannot open kakao story."];
             return;
         }
-        scrapInfo.title = title;
-        if(desc != NULL){
-            scrapInfo.desc = desc;
+        if(options[@"post"] == NULL || options[@"appver"] == NULL ){
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"post or appver is null."];
+            return;
         }
-        if(imageURLs != NULL){
-            scrapInfo.imageURLs = imageURLs;
+        NSString* post = options[@"post"];
+        NSString* appver = options[@"appver"];
+        NSBundle *bundle = [NSBundle mainBundle];
+        NSString* appid = [bundle bundleIdentifier];
+        if(options[@"appid"] != NULL){
+            appid = options[@"appid"] ;
         }
-        if(type != NULL){
-            switch ([type intValue]) {
-                case 2:
+        NSString* appname = [bundle objectForInfoDictionaryKey:@"CFBundleName"];
+        if(options[@"appname"] != NULL){
+            appname = options[@"appname"] ;
+        }
+        ScrapInfo *scrapInfo = nil;
+        if(options[@"urlinfo"] != NULL){
+            scrapInfo = [[ScrapInfo alloc] init];
+            NSString* title = (options[@"urlinfo"])[@"title"];
+            NSString* desc = (options[@"urlinfo"])[@"desc"];
+            NSArray* imageURLs = (options[@"urlinfo"])[@"imageURLs"];
+            NSString* type = (options[@"urlinfo"])[@"type"];
+            
+            if(title == NULL){
+                [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"title in urlinfo is null."];
+                return;
+            }
+            scrapInfo.title = title;
+            if(desc != NULL){
+                scrapInfo.desc = desc;
+            }
+            if(imageURLs != NULL){
+                scrapInfo.imageURLs = imageURLs;
+            }
+            if(type != NULL){
+                switch ([type intValue]) {
+                    case 2:
                     scrapInfo.type = ScrapTypeVideo;
                     break;
-                case 3:
+                    case 3:
                     scrapInfo.type = ScrapTypeMusic;
                     break;
-                case 4:
+                    case 4:
                     scrapInfo.type = ScrapTypeBook;
                     break;
-                case 5:
+                    case 5:
                     scrapInfo.type = ScrapTypeArticle;
                     break;
-                case 6:
+                    case 6:
                     scrapInfo.type = ScrapTypeProfile;
                     break;
-                default:
+                    default:
                     scrapInfo.type = ScrapTypeWebsite;
                     break;
+                }
+                
             }
-            
+        }
+        
+        
+        NSString *storyLinkURLString = [KakaoCordovaStoryLinkHelper makeStoryLinkWithPostingText:post
+                                                                                     appBundleID:appid
+                                                                                      appVersion:appver
+                                                                                         appName:appname
+                                                                                       scrapInfo:scrapInfo];
+        if([KakaoCordovaStoryLinkHelper openStoryLinkWithURLString:storyLinkURLString]){
+            CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@""];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }else{
+            [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"something went wrong."];
         }
     }
     
     
-    NSString *storyLinkURLString = [KakaoCordovaStoryLinkHelper makeStoryLinkWithPostingText:post
-                                                                                 appBundleID:appid
-                                                                                  appVersion:appver
-                                                                                     appName:appname
-                                                                                   scrapInfo:scrapInfo];
-    if([KakaoCordovaStoryLinkHelper openStoryLinkWithURLString:storyLinkURLString]){
-        CDVPluginResult* pluginResult = pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"success!"];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }else{
-        [self errorHandler:command.callbackId error:NULL errorCode:0 errorMessage:@"something went wrong."];
-    }
-}
-
-
 - (void)errorHandler:(NSString*)callbackId error:(NSError*)error errorCode:(NSInteger)errorCode errorMessage:(NSString*)errorMessage {
     
     NSInteger _errorCode = -777;
@@ -804,7 +1010,7 @@
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:errorDic];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 }
-
+    
 - (void)openURL:(NSNotification *)notification {
     NSLog(@"handle url1: %@", [notification object]);
     NSURL *url = [notification object];
@@ -821,12 +1027,12 @@
         NSLog(@"%@", params);
     }
 }
-
+    
 - (void)applicationDidBecomeActive {
     [KOSession handleDidBecomeActive];
 }
-
-@end
+    
+    @end
 
 
 

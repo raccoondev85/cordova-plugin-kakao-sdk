@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
+/*!
+ * @header KOAppFriend.h
+ * @brief 한 명의 앱 친구를 나타내는 클래스
+ */
+
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+/*!
+ * @class KOAppFriend
+ * @brief 한 명의 앱 친구를 나타내는 클래스
+ */
 @interface KOAppFriend : NSObject
 
 /*!

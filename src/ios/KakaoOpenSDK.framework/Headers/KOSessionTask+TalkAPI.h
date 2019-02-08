@@ -25,7 +25,10 @@
 
 #import "KOUser.h"
 #import "KOChat.h"
+#import "KOChatMember.h"
 #import "KOFriend.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 DEPRECATED_ATTRIBUTE
 typedef NS_ENUM(NSInteger, KOTalkMessageReceiverType) {
@@ -45,6 +48,21 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
     KOTalkMessageReceiverIDTypeChat = 2,
     KOTalkMessageReceiverIDTypeUUID = 3,
 };
+
+/*!
+ * @typedef KOSessionTaskTalkMembersCompletionHandler
+ * @abstract 채팅방 멤버 API 완료 핸들러
+ * @param members 멤버 목록
+ * @param type 채팅방 타입. "Direct", "Multi"
+ * @param activeMembersCount 내려받은 멤버 목록의 수 (최대 500). friendsOnly가 false이면 nil
+ * @param activeFriendsCount 내려받은 멤버 중 친구의 수. friendsOnly가 false이면 nil
+ * @param error API 호출 도중 발생한 에러
+ */
+typedef void(^KOSessionTaskTalkMembersCompletionHandler)(NSArray<KOChatMember *> *_Nullable members,
+                                                         NSString *_Nullable type,
+                                                         NSNumber *_Nullable activeMembersCount,
+                                                         NSNumber *_Nullable activeFriendsCount,
+                                                         NSError *_Nullable error);
 
 @class KMTTemplate;
 
@@ -66,7 +84,7 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
 + (instancetype)talkMessageSendTaskWithTemplate:(KMTTemplate *)templateObj
                                    receiverType:(KOTalkMessageReceiverIDType)receiverType
                                      receiverId:(id)receiverId
-                              completionHandler:(void (^)(NSError *error))completionHandler;
+                              completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 /*!
  @abstract 지정된 URL을 스크랩하여, 카카오톡으로 메시지를 전송합니다. 제휴를 통해 권한이 부여된 특정 앱에서만 호출 가능합니다.
@@ -78,7 +96,7 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
 + (instancetype)talkMessageSendTaskWithURL:(NSURL *)URL
                               receiverType:(KOTalkMessageReceiverIDType)receiverType
                                 receiverId:(id)receiverId
-                         completionHandler:(void (^)(NSError *error))completionHandler;
+                         completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 /*!
  @abstract 지정된 URL을 스크랩하여, 카카오톡으로 메시지를 전송합니다. 제휴를 통해 권한이 부여된 특정 앱에서만 호출 가능합니다.
@@ -90,11 +108,11 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
 + (instancetype)talkMessageSendTaskWithURL:(NSURL *)URL
-                                templateId:(NSString *)templateId
-                              templateArgs:(NSDictionary<NSString *, NSString *> *)templateArgs
+                                templateId:(nullable NSString *)templateId
+                              templateArgs:(nullable NSDictionary<NSString *, NSString *> *)templateArgs
                               receiverType:(KOTalkMessageReceiverIDType)receiverType
                                 receiverId:(id)receiverId
-                         completionHandler:(void (^)(NSError *error))completionHandler;
+                         completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 /*!
  @abstract 미리 지정된 메시지 템플릿(v2)을 사용하여, 카카오톡으로 메시지를 전송합니다. 제휴를 통해 권한이 부여된 특정 앱에서만 호출 가능합니다.
@@ -105,10 +123,10 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
 + (instancetype)talkMessageSendTaskWithTemplateId:(NSString *)templateId
-                                     templateArgs:(NSDictionary<NSString *, NSString *> *)templateArgs
+                                     templateArgs:(nullable NSDictionary<NSString *, NSString *> *)templateArgs
                                      receiverType:(KOTalkMessageReceiverIDType)receiverType
                                        receiverId:(id)receiverId
-                                completionHandler:(void (^)(NSError *error))completionHandler;
+                                completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 
 
@@ -121,7 +139,7 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
 + (instancetype)talkMemoSendTaskWithTemplate:(KMTTemplate *)templateObj
-                           completionHandler:(void (^)(NSError *error))completionHandler;
+                           completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 /*!
  @abstract 지정된 URL을 스크랩하여, 카카오톡의 "나와의 채팅방"으로 메시지를 전송합니다. 모든 앱에서 호출 가능합니다.
@@ -129,7 +147,7 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
 + (instancetype)talkMemoSendTaskWithURL:(NSURL *)URL
-                      completionHandler:(void (^)(NSError *error))completionHandler;
+                      completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 /*!
  @abstract 지정된 URL을 스크랩하여, 카카오톡의 "나와의 채팅방"으로 메시지를 전송합니다. 모든 앱에서 호출 가능합니다.
@@ -139,9 +157,9 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
 + (instancetype)talkMemoSendTaskWithURL:(NSURL *)URL
-                             templateId:(NSString *)templateId
-                           templateArgs:(NSDictionary<NSString *, NSString *> *)templateArgs
-                      completionHandler:(void (^)(NSError *error))completionHandler;
+                             templateId:(nullable NSString *)templateId
+                           templateArgs:(nullable NSDictionary<NSString *, NSString *> *)templateArgs
+                      completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 /*!
  @abstract 미리 지정된 메시지 템플릿(v2)을 사용하여, 카카오톡의 "나와의 채팅방"으로 메시지를 전송합니다. 모든 앱에서 호출 가능합니다.
@@ -150,8 +168,8 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 요청 완료시 실행될 block. 오류 처리와 전송 완료 시 수행된다.
  */
 + (instancetype)talkMemoSendTaskWithTemplateId:(NSString *)templateId
-                                  templateArgs:(NSDictionary<NSString *, NSString *> *)templateArgs
-                             completionHandler:(void (^)(NSError *error))completionHandler;
+                                  templateArgs:(nullable NSDictionary<NSString *, NSString *> *)templateArgs
+                             completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 
 
@@ -161,7 +179,7 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @abstract 현재 로그인된 사용자의 카카오톡 프로필 정보를 얻을 수 있습니다.
  @param completionHandler 카카오톡 프로필 정보를 얻어 처리하는 핸들러
  */
-+ (instancetype)talkProfileTaskWithCompletionHandler:(KOSessionTaskCompletionHandler)completionHandler;
++ (instancetype)talkProfileTaskWithCompletionHandler:(nullable KOSessionTaskCompletionHandler)completionHandler;
 
 /*!
  @abstract 현재 로그인된 사용자의 카카오톡 프로필 정보를 얻을 수 있습니다.
@@ -169,7 +187,7 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 카카오톡 프로필 정보를 얻어 처리하는 핸들러
  */
 + (instancetype)talkProfileTaskWithSecureResource:(BOOL)secureResource
-                                completionHandler:(KOSessionTaskCompletionHandler)completionHandler;
+                                completionHandler:(nullable KOSessionTaskCompletionHandler)completionHandler;
 
 
 #pragma mark - Chat List
@@ -180,6 +198,20 @@ typedef NS_ENUM(NSInteger, KOTalkMessageReceiverIDType) {
  @param completionHandler 카카오톡 채팅방 목록을 가져와서 처리하는 핸들러.
  */
 + (instancetype)talkChatListTaskWithContext:(KOChatContext *)context
-                          completionHandler:(void (^)(NSArray *chats, NSError *error))completionHandler;
+                          completionHandler:(nullable void (^)(NSArray<KOChat *> *_Nullable chats, NSError *_Nullable error))completionHandler;
+
+#pragma mark - Members
+
+/*!
+ @abstract 사용자의 채팅방에 속한 멤버 리스트 정보를 반환합니다.
+ @param chatID talkChatListTaskWithContext:completionHandler: 메소드로 받아온 채팅방의 아이디
+ @param friendsOnly 채팅 멤버 중 친구인 멤버만 가져오고 싶을 경우 YES로 설정
+ @param completionHandler 채팅 멤버 목록 완료 핸들러. 친구만 가져올 경우 activeMember와 activeFriends
+ */
++ (instancetype)talkMembersTaskWithChatID:(id)chatID
+                              friendsOnly:(BOOL)friendsOnly
+                        completionHandler:(nullable KOSessionTaskTalkMembersCompletionHandler)completionHandler;
 
 @end
+
+NS_ASSUME_NONNULL_END
