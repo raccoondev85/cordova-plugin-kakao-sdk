@@ -65,6 +65,7 @@ import { KakaoCordovaSDK } from 'kakao-sdk';
 
 ## IONIC 3 DEMO
 Environment
+
 |type|version
 |---|---
 |cordova-plugin-kakao-sdk|3.0.0
