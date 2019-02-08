@@ -2,6 +2,7 @@
 Kakao Cordova SDK Plugin (카카오 코르도바 SDK 플러그인)
 
 Version is updated to 3.0.0 
+  - cordova-android compatibility between 6.4.0 and ^7.0.0 fixed
   - android SDK version changed from 1.12.0 to 1.16.0 (Google Play warning: Your app contains a Cross-App Scripting Vulnerability issue fixed)
   - ios SDK version changed from 1.9.0 to 1.11.1
   - new functions added  updateScopes(targetScopes: any), checkScopeStatus(targetScopes: any), requestSendMemo(builder: any), addPlusFriend(params: any), chatPlusFriend(params: any), chatPlusFriendUrl(params: any)
@@ -26,7 +27,7 @@ Version is updated to 3.0.0
 |---|---
 |ionic (Ionic CLI)|3.19.1
 |cordova (Cordova CLI)|8.0.0
-|Cordova Platforms Android|6.4.0
+|Cordova Platforms Android|7.1.4
 |Cordova Platforms IOS|4.5.4
 |Ionic Framework|ionic-angular 3.9.2
 |KakaoCommon.framework(ios)|1.11.1
@@ -68,6 +69,11 @@ Environment
 |---|---
 |cordova-plugin-kakao-sdk|3.0.0
 |kakao-sdk|3.0.0
+
+Link:
+https://github.com/raccoondev85/cordova-plugin-kakao-sdk-example
+
+
 
 # Login
 ## Login Methods
