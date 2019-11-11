@@ -6,9 +6,10 @@
 #import <KakaoS2/KakaoS2.h>
 #import <KakaoPlusFriend/KakaoPlusFriend.h>
 #import "KakaoCordovaStoryLinkHelper.h"
+#import "AppDelegate.h"
 
 @interface KakaoCordovaSDK : CDVPlugin <UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIScrollViewDelegate>
-@property (copy)   NSString* callbackId;
+
 typedef NS_ENUM(NSInteger, MyAuthType) {
     MyAuthTypeTalk = 1,
     MyAuthTypeStory = 2,

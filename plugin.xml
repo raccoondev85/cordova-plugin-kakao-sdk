@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
    id="cordova-plugin-kakao-sdk"
    name="cordova-plugin-kakao-sdk"
-   version="3.0.0">
+   version="3.0.5">
 
     <name>KakaoCordovaSDK</name>
     <description>Kakao Cordova SDK Plugin</description>
