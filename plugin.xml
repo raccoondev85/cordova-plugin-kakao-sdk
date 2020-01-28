@@ -63,14 +63,14 @@
         <source-file src="src/android/KakaoResources.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/KakaoStoryLink.java" target-dir="src/com/raccoondev85/plugin/kakao" />
         <source-file src="src/android/KakaoCordovaErrorHandler.java" target-dir="src/com/raccoondev85/plugin/kakao" />
-        <resource-file src="src/android/res/values/styles.xml" target="res/values" />
-        <resource-file src="src/android/res/drawable/account.png" target="res/drawable" />
-        <resource-file src="src/android/res/drawable/btn_x.png" target="res/drawable" />
-        <resource-file src="src/android/res/drawable/story.png" target="res/drawable" />
-        <resource-file src="src/android/res/drawable/talk.png" target="res/drawable" />
-        <resource-file src="src/android/res/drawable/selector_login_button.xml" target="res/drawable" />
-        <resource-file src="src/android/res/layout/layout_login_dialog.xml" target="res/layout" />
-        <resource-file src="src/android/res/layout/layout_login_item.xml" target="res/layout" />
+        <resource-file src="src/android/res/values/styles.xml" target="res/values/styles.xml" />
+        <resource-file src="src/android/res/drawable/account.png" target="res/drawable/account.png" />
+        <resource-file src="src/android/res/drawable/btn_x.png" target="res/drawable/btn_x.png" />
+        <resource-file src="src/android/res/drawable/story.png" target="res/drawable/story.png" />
+        <resource-file src="src/android/res/drawable/talk.png" target="res/drawable/talk.png" />
+        <resource-file src="src/android/res/drawable/selector_login_button.xml" target="res/drawable/selector_login_button.xml" />
+        <resource-file src="src/android/res/layout/layout_login_dialog.xml" target="res/layout/layout_login_dialog.xml" />
+        <resource-file src="src/android/res/layout/layout_login_item.xml" target="res/layout/layout_login_item.xml" />
 
     </platform>
     
